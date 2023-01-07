@@ -25,7 +25,7 @@ name: Deploy to firebase
 on:
   push:
     branches:
-      - main
+      - master
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -36,7 +36,7 @@ jobs:
       - name: Setup the code
         run: npm install
       - name: Build
-        run: npm build
+        run: npm run build
       - name: Deploy to Firebase
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:

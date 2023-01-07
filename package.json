@@ -28,6 +28,7 @@
   "scripts": {
     "workbench": "nodemon ./src/scripts/main.ts",
     "test:watch": "jest --watch",
+    "deploy": "yarn build && firebase deploy",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",

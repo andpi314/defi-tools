@@ -83,6 +83,13 @@ export default function UniswapHedge() {
   const [pool, setPool] = useState<string>(
     "0x7bea39867e4169dbe237d55c8242a8f2fcdcc387"
   );
+  const [position, setPosition] = useState<{
+    priceUpper: number;
+    priceLower: number;
+  }>({
+    priceLower: 1226.7,
+    priceUpper: 1276.7,
+  });
 
   const [transactionCount, setTransactionCount] = useState<number>(100);
 
@@ -139,19 +146,14 @@ export default function UniswapHedge() {
   // 0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640
   const staticLines: { yValue: number; label: string; stroke?: string }[] = [
     {
-      yValue: 1226.7,
+      yValue: position.priceLower,
       label: "rMin",
     },
     {
-      yValue: 1276.7,
+      yValue: position.priceUpper,
       label: "rMax",
     },
   ];
-
-  const chartConfig = {
-    width: 500,
-    height: 600,
-  };
 
   return (
     <div className="App">
@@ -185,7 +187,12 @@ export default function UniswapHedge() {
             type="text"
           />
           <Select
-            style={{ marginLeft: 8, border: "1px solid #000", borderRadius: 2 }}
+            style={{
+              marginLeft: 8,
+              width: 180,
+              border: "1px solid #000",
+              borderRadius: 2,
+            }}
             options={availablePools}
             value={pool}
             helpText={"Select a pool"}
@@ -210,6 +217,47 @@ export default function UniswapHedge() {
             {"Fetch Data"}
           </button>
         </div>
+        <div style={{ marginTop: 8 }}>
+          <label>{"Position Data: "}</label>
+          <label>{"Upper Price"}</label>
+          <input
+            style={{
+              width: 80,
+              marginLeft: 8,
+              minHeight: 26,
+              border: "1px solid #000",
+              borderRadius: 2,
+            }}
+            value={position.priceUpper}
+            onChange={(e) =>
+              setPosition((prev) => ({
+                ...prev,
+                priceUpper: parseFloat(e.target.value),
+              }))
+            }
+            step="any"
+            type="number"
+          />
+          <label style={{ marginLeft: 4 }}>{"Lower Price"}</label>
+          <input
+            style={{
+              width: 80,
+              marginLeft: 8,
+              minHeight: 26,
+              border: "1px solid #000",
+              borderRadius: 2,
+            }}
+            step="any"
+            value={position.priceLower}
+            onChange={(e) =>
+              setPosition((prev) => ({
+                ...prev,
+                priceLower: parseFloat(e.target.value),
+              }))
+            }
+            type="number"
+          />
+        </div>
       </div>
       {loading ? (
         <div
@@ -227,7 +275,7 @@ export default function UniswapHedge() {
       ) : error ? (
         <div>Error</div>
       ) : (
-        <ResponsiveContainer width={"100%"} height={"100%"}>
+        <ResponsiveContainer width={"100%"} height={"80%"}>
           <LineChart
             width={500}
             height={600}
