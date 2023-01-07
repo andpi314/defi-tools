@@ -5,6 +5,9 @@ import { useState } from "react";
 // const endpoint = `https://api.etherscan.io/api?module=account&action=txlist&address=${poolAddress}&startblock=0&endblock=99999999&sort=asc&apikey=${process.env.REACT_APP_ETHERSCAN_API_KEY}`;
 // const response = await axios.get(endpoint);
 
+// simple sleep function
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 export interface Pool {
   token0: {
     id: string;
@@ -34,6 +37,79 @@ export interface UniswapPoolTransaction {
   swaps: Event[];
 }
 
+export const getSwapsAllPages = async (poolAddress: string) => {
+  const baseApi = process.env.REACT_APP_UNISWAP_V3_GRAPH_BASE_API;
+  if (!baseApi)
+    throw new Error("Missing REACT_APP_UNISWAP_V3_GRAPH_BASE_API env variable");
+
+  const getQuery = (
+    first: number,
+    skip: number
+  ) => `query transactions($address: Bytes!, $timestampMin: BigInt!) {
+    swaps(
+      first: ${first}
+      skip: ${skip}
+      orderBy: timestamp
+      orderDirection: desc
+      where: {pool: $address, timestamp_gt: $timestampMin}
+      subgraphError: allow
+    ) {
+      timestamp
+      pool {
+        token0 {
+          id
+          symbol
+        }
+        token1 {
+          id
+          symbol
+        }
+      }
+      origin
+      amountUSD
+      amount0
+      amount1
+      sender
+      transaction {
+        id
+      }
+    }
+  }`;
+
+  const entitiesPerPage = 1000;
+  let skip = 0;
+  let hasNextPage = true;
+  let data = [];
+  do {
+    const query = getQuery(1000, skip);
+
+    const response = await axios.post(
+      baseApi,
+      // !Warning: it only fetches first 100 transactions, but you can change this parameter to met your needs
+      {
+        operationName: "transactions",
+        variables: {
+          address: poolAddress,
+          timestampMin: 1669852800,
+          //first: first || 100 },
+        },
+        query,
+        //  "query transactions($address: Bytes!, $first: Int!) {\n  mints(\n    first: $first\n    orderBy: timestamp\n    orderDirection: desc\n    where: {pool: $address}\n    subgraphError: allow\n  ) {\n    timestamp\n    transaction {\n      id\n      __typename\n    }\n    pool {\n      token0 {\n        id\n        symbol\n        __typename\n      }\n      token1 {\n        id\n        symbol\n        __typename\n      }\n      __typename\n    }\n    owner\n    sender\n    origin\n    amount0\n    amount1\n    amountUSD\n    __typename\n  }\n  swaps(\n    first: $first\n    orderBy: timestamp\n    orderDirection: desc\n    where: {pool: $address}\n    subgraphError: allow\n  ) {\n    timestamp\n    transaction {\n      id\n      __typename\n    }\n    pool {\n      token0 {\n        id\n        symbol\n        __typename\n      }\n      token1 {\n        id\n        symbol\n        __typename\n      }\n      __typename\n    }\n    origin\n    amount0\n    amount1\n    amountUSD\n    __typename\n  }\n  burns(\n    first: $first\n    orderBy: timestamp\n    orderDirection: desc\n    where: {pool: $address}\n    subgraphError: allow\n  ) {\n    timestamp\n    transaction {\n      id\n      __typename\n    }\n    pool {\n      token0 {\n        id\n        symbol\n        __typename\n      }\n      token1 {\n        id\n        symbol\n        __typename\n      }\n      __typename\n    }\n    owner\n    amount0\n    amount1\n    amountUSD\n    __typename\n  }\n}\n",
+      }
+    );
+
+    if (response.data.data?.swaps?.length < entitiesPerPage) {
+      hasNextPage = false;
+    }
+    skip += entitiesPerPage;
+    data.push(...response.data.data.swaps);
+    // cool stuff here
+    await sleep(50);
+  } while (hasNextPage && skip <= 5000);
+
+  return data;
+};
+
 export const useUniswapPool = () => {
   const baseApi = process.env.REACT_APP_UNISWAP_V3_GRAPH_BASE_API;
   const [transactions, setTransactions] = useState<UniswapPoolTransaction>({
@@ -46,6 +122,7 @@ export const useUniswapPool = () => {
 
   const fetchPoolTransactions = async (poolAddress: string, first?: number) => {
     try {
+      setError(undefined);
       setLoading(true);
 
       if (!baseApi)
@@ -53,30 +130,41 @@ export const useUniswapPool = () => {
           "Missing REACT_APP_UNISWAP_V3_GRAPH_BASE_API env variable"
         );
 
-      const response = await axios.post(
-        baseApi,
-        // !Warning: it only fetches first 100 transactions, but you can change this parameter to met your needs
-        {
-          operationName: "transactions",
-          variables: { address: poolAddress, first: first || 100 },
-          query:
-            "query transactions($address: Bytes!, $first: Int!) {\n  mints(\n    first: $first\n    orderBy: timestamp\n    orderDirection: desc\n    where: {pool: $address}\n    subgraphError: allow\n  ) {\n    timestamp\n    transaction {\n      id\n      __typename\n    }\n    pool {\n      token0 {\n        id\n        symbol\n        __typename\n      }\n      token1 {\n        id\n        symbol\n        __typename\n      }\n      __typename\n    }\n    owner\n    sender\n    origin\n    amount0\n    amount1\n    amountUSD\n    __typename\n  }\n  swaps(\n    first: $first\n    orderBy: timestamp\n    orderDirection: desc\n    where: {pool: $address}\n    subgraphError: allow\n  ) {\n    timestamp\n    transaction {\n      id\n      __typename\n    }\n    pool {\n      token0 {\n        id\n        symbol\n        __typename\n      }\n      token1 {\n        id\n        symbol\n        __typename\n      }\n      __typename\n    }\n    origin\n    amount0\n    amount1\n    amountUSD\n    __typename\n  }\n  burns(\n    first: $first\n    orderBy: timestamp\n    orderDirection: desc\n    where: {pool: $address}\n    subgraphError: allow\n  ) {\n    timestamp\n    transaction {\n      id\n      __typename\n    }\n    pool {\n      token0 {\n        id\n        symbol\n        __typename\n      }\n      token1 {\n        id\n        symbol\n        __typename\n      }\n      __typename\n    }\n    owner\n    amount0\n    amount1\n    amountUSD\n    __typename\n  }\n}\n",
-        }
-      );
+      // const response = await axios.post(
+      //   baseApi,
+      //   // !Warning: it only fetches first 100 transactions, but you can change this parameter to met your needs
+      //   {
+      //     operationName: "transactions",
+      //     variables: {
+      //       address: poolAddress,
+      //       timestampMin: 1669852800,
+      //       //first: first || 100 },
+      //     },
+      //     query,
+      //     //  "query transactions($address: Bytes!, $first: Int!) {\n  mints(\n    first: $first\n    orderBy: timestamp\n    orderDirection: desc\n    where: {pool: $address}\n    subgraphError: allow\n  ) {\n    timestamp\n    transaction {\n      id\n      __typename\n    }\n    pool {\n      token0 {\n        id\n        symbol\n        __typename\n      }\n      token1 {\n        id\n        symbol\n        __typename\n      }\n      __typename\n    }\n    owner\n    sender\n    origin\n    amount0\n    amount1\n    amountUSD\n    __typename\n  }\n  swaps(\n    first: $first\n    orderBy: timestamp\n    orderDirection: desc\n    where: {pool: $address}\n    subgraphError: allow\n  ) {\n    timestamp\n    transaction {\n      id\n      __typename\n    }\n    pool {\n      token0 {\n        id\n        symbol\n        __typename\n      }\n      token1 {\n        id\n        symbol\n        __typename\n      }\n      __typename\n    }\n    origin\n    amount0\n    amount1\n    amountUSD\n    __typename\n  }\n  burns(\n    first: $first\n    orderBy: timestamp\n    orderDirection: desc\n    where: {pool: $address}\n    subgraphError: allow\n  ) {\n    timestamp\n    transaction {\n      id\n      __typename\n    }\n    pool {\n      token0 {\n        id\n        symbol\n        __typename\n      }\n      token1 {\n        id\n        symbol\n        __typename\n      }\n      __typename\n    }\n    owner\n    amount0\n    amount1\n    amountUSD\n    __typename\n  }\n}\n",
+      //   }
+      // );
 
-      if (response.data.errors?.length > 0) {
-        response.data.errors?.forEach((e: any) =>
-          console.error(
-            `useUniswapPool -> fetchPoolTransactions -> ${e.message}`
-          )
-        );
-      }
+      // if (response.data.errors?.length > 0) {
+      //   response.data.errors?.forEach((e: any) =>
+      //     console.error(
+      //       `useUniswapPool -> fetchPoolTransactions -> ${e.message}`
+      //     )
+      //   );
+      // }
+
+      const data: any = await getSwapsAllPages(poolAddress);
 
       setTransactions(
-        response.data.data || {
+        // response.data.data || {
+        //   burns: [],
+        //   mints: [],
+        //   swaps: [],
+        // }
+        {
           burns: [],
           mints: [],
-          swaps: [],
+          swaps: data,
         }
       );
     } catch (error: any) {

@@ -87,6 +87,12 @@ export default function UniswapHedge() {
           />
         </div>
       </div>
+
+      <div>
+        <span>{`Transaction count: ${
+          loading ? "N/A" : transactions.swaps.length
+        }`}</span>
+      </div>
       <Chart
         position={position}
         loading={loading}

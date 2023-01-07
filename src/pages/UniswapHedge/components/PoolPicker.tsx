@@ -19,6 +19,11 @@ export default function PoolPicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const setAndFetch = (pool: string) => {
+    setPool(pool);
+    onFetch(pool);
+  };
+
   return (
     <div>
       <label>{"Pool Address: "}</label>
@@ -31,10 +36,12 @@ export default function PoolPicker({
           borderRadius: 2,
         }}
         value={pool}
-        onChange={(e) => setPool(e.target.value)}
+        onChange={(e) => {
+          setAndFetch(e.target.value);
+        }}
         type="text"
       />
-      <SelectPool pool={pool} onPoolChange={setPool} />
+      <SelectPool pool={pool} onPoolChange={setAndFetch} />
 
       <button
         disabled={fetchDisabled}

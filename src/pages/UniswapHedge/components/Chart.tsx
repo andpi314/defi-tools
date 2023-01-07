@@ -115,7 +115,7 @@ export default function Chart({
           />
         ))}
 
-        <Line type="monotone" dataKey="price" stroke="#8884d8" />
+        <Line dot={false} type="monotone" dataKey="price" stroke="#8884d8" />
         {/* <Line type="monotone" dataKey="uv" stroke="#82ca9d" /> */}
       </LineChart>
     </ResponsiveContainer>

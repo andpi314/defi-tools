@@ -2,6 +2,21 @@
 
 Work in progress. This is a collection of tools for DeFi.
 
+[![Firebase CI](https://github.com/andpi314/defi-tools/actions/workflows/firebase-hosting.yml/badge.svg)](https://github.com/andpi314/defi-tools/actions/workflows/firebase-hosting.yml)
+
+![Home Page](./home.png)
+[Live demo](https://defi-tools-frontend.web.app/)
+
+## Tools
+
+A collection of tools for building and analyzing DeFi strategies.
+
+### Uniswap Subgraph
+
+```bash
+https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3
+```
+
 ## Deployment
 
 How to deploy this project
