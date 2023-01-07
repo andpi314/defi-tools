@@ -1,5 +1,3 @@
-import { ethers } from "ethers";
-import { FtmScan } from "./ftm-scan/ftm-scan.sdk";
 import { Portfolio } from "./portoflio";
 
 import * as dotenv from "dotenv";
@@ -12,7 +10,7 @@ async function MainWorkbench() {
 
   const inBoundBalance = await portfolio.getDepositedAmount();
 
-  console.log(2186.31 - inBoundBalance);
+  console.log(2186.31 - inBoundBalance, inBoundBalance);
 }
 
 MainWorkbench();

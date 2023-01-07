@@ -6,6 +6,8 @@ import {
   Legend,
   Line,
   LineChart,
+  Scatter,
+  ScatterChart,
   Tooltip,
   XAxis,
   YAxis,
@@ -16,16 +18,22 @@ enum TokenType {
   token1 = "token1",
 }
 
+type Permutation = {
+  token0Price: number;
+  token1Price: number;
+  token1Out: number;
+};
+
 export default function TradingReturn() {
   const [token0, setToken0] = useState({
-    purchaseQty: 19.2,
-    purchasePrice: 0,
-    marketPrice: 1,
+    purchaseQty: 340,
+    purchasePrice: 0.68,
+    marketPrice: 0.24,
   });
   const [token1, setToken1] = useState({
-    purchaseQty: 200,
-    purchasePrice: 0,
-    marketPrice: 1,
+    purchaseQty: 41.22,
+    purchasePrice: 5.61,
+    marketPrice: 2.45,
   });
 
   const [tokenReceived, setTokenReceived] = useState(0);
@@ -57,106 +65,226 @@ export default function TradingReturn() {
   };
 
   React.useEffect(() => {
-    const tokenToSell = token0.purchaseQty;
+    const tokenToSell = token1.purchaseQty;
 
-    setTokenReceived((tokenToSell * token0.marketPrice) / token1.marketPrice);
+    setTokenReceived((tokenToSell * token1.marketPrice) / token0.marketPrice);
   }, [token0.marketPrice, token1.marketPrice]);
 
-  const getKey = (price: number): string => `token0_received_${price}`;
+  function BuyTime() {
+    return (
+      <div
+        style={{
+          border: "1px solid green",
+          padding: 4,
+          margin: 2,
+          display: "flex",
+        }}
+      >
+        <div>
+          <div>{"Buy time (qty)"}</div>
+          <div>
+            <span>{"Token 0: "}</span>
+            <input
+              value={token0.purchaseQty}
+              name={TokenType.token0}
+              type="number"
+              onChange={(e) => handleChange(e)}
+              placeholder="Token 0"
+            />
+          </div>
+          <div>
+            <span>{"Token 1: "}</span>
+            <input
+              value={token1.purchaseQty}
+              name={TokenType.token1}
+              type="number"
+              onChange={(e) => handleChange(e)}
+              placeholder="Token 1"
+            />
+          </div>
+        </div>
+        <div style={{ marginLeft: 4 }}>
+          <div>{"Buy time (Price)"}</div>
+          <div>
+            <span>{`Token 0: ${token0.purchasePrice}`}</span>
+          </div>
+          <div>
+            <span>{`Token 1: ${token1.purchasePrice}`}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  const [chartObj, keys] = React.useMemo(() => {
-    const token1Prices = Array(3)
-      .fill(1)
-      .map((_, i) => i + 0.1);
-    const token0Prices = Array(100)
-      .fill(1)
-      .map((_, i) => i + 1);
+  function getLimits(
+    amount: number,
+    threshold: number,
+    steps: number
+  ): {
+    upper: number;
+    bottom: number;
+    step: number;
+  } {
+    const quote = (amount * 100) / threshold;
 
-    const priceVariation: any[] = [];
+    const upper = amount + quote;
+    const bottom = amount - quote;
 
-    const keys: string[] = [];
+    const step = (upper - bottom) / steps;
 
-    token1Prices.forEach((token1Price, index) => {
-      const thisKey = getKey(index + 1);
-      keys.push(thisKey);
-      token0Prices.forEach((token0Price) => {
-        priceVariation.push({
-          token0Price,
-          token1Price,
-          [thisKey]: (token0.purchaseQty * token0Price) / token1Price,
+    return {
+      upper,
+      bottom,
+      step,
+    };
+  }
+
+  function computePayload(qty: number): Permutation[] {
+    // *** GET CURRENT DATA ***
+    const token0Price = token0.marketPrice;
+    const token1Price = token1.marketPrice;
+
+    // *** CONFIGURATION ***
+    // in bps, 10%
+    const bondThreshold = 10;
+    const numberOfSteps = 5;
+
+    // *** GET LIMIT FOR EACH TOKEN ***
+    const toke0Data = getLimits(token0Price, bondThreshold, numberOfSteps);
+    const token1Data = getLimits(token1Price, bondThreshold, numberOfSteps);
+
+    console.log(toke0Data, token1Data);
+
+    // *** NEED TO PERMUTE FOR EACH POSSIBLE OUTCOME ***
+
+    // A list of permutation as market positions
+    const positions: Permutation[] = [];
+
+    for (
+      let price0 = toke0Data.bottom;
+      price0 <= toke0Data.upper;
+      price0 += token1Data.step
+    ) {
+      // *** TOKEN 0 PRICE RANGE ITERATION ***
+
+      for (
+        let price1 = token1Data.bottom;
+        price1 <= token1Data.upper;
+        price1 += token1Data.step
+      ) {
+        positions.push({
+          token0Price: price0,
+          token1Price: price1,
+          token1Out: (qty * price0) / price1,
         });
-      });
-    });
+      }
+    }
+    return positions;
+  }
 
-    return [priceVariation, keys];
-  }, [token0.purchaseQty, token1.marketPrice]);
+  const chartObj: Permutation[] = React.useMemo(() => {
+    // HP: how much of token1 can I get back buy selling 200n of token0?
+    const positions = computePayload(token1.purchaseQty);
+    console.log(positions);
+
+    return positions;
+  }, [token0.marketPrice, token1.marketPrice]);
+
+  const profit = tokenReceived - token0.purchaseQty;
+
+  const isProfit = profit > 0;
 
   return (
     <>
-      <div>
-        <div>{"Buy time"}</div>
-        <span>{"Token 0: "}</span>
-        <input
-          value={token0.purchaseQty}
-          name={TokenType.token0}
-          type="number"
-          onChange={(e) => handleChange(e)}
-          placeholder="Token 0"
-        />
-      </div>
-      <div>
-        <span>{"Token 1: "}</span>
-        <input
-          value={token1.purchaseQty}
-          name={TokenType.token1}
-          type="number"
-          onChange={(e) => handleChange(e)}
-          placeholder="Token 1"
-        />
-      </div>
-      <div>
-        <div>{"Current time"}</div>
-        <span>{`Token 1 price: (${token1.marketPrice})`}</span>
-        <input
-          type="range"
-          step={0.01}
-          name={TokenType.token1}
-          onChange={(e) => handleRangeChange(e)}
-          min="0"
-          max="100"
-          value={token1.marketPrice}
-        />
-        <span>{`Token 0 price: (${token0.marketPrice})`}</span>
-        <input
-          type="range"
-          name={TokenType.token0}
-          onChange={(e) => handleRangeChange(e)}
-          min="0"
-          max="100"
-          value={token0.marketPrice}
-        />
-        <div>{tokenReceived}</div>
+      <BuyTime />
 
+      <div style={{ border: "1px solid blue", padding: 4, margin: 2 }}>
+        <div>{"Current time"}</div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: ".5fr 2fr",
+            gap: 20,
+          }}
+        >
+          <div>{`Token 0 price: (${token0.marketPrice})`}</div>
+          <input
+            type="range"
+            step={0.01}
+            name={TokenType.token0}
+            onChange={(e) => handleRangeChange(e)}
+            min="0"
+            max="10"
+            value={token0.marketPrice}
+          />
+        </div>
+        <div
+          style={{ display: "grid", gridTemplateColumns: ".5fr 2fr", gap: 20 }}
+        >
+          <div>{`Token 1 price: (${token1.marketPrice})`}</div>
+
+          <input
+            type="range"
+            step={0.01}
+            name={TokenType.token1}
+            onChange={(e) => handleRangeChange(e)}
+            min="0"
+            max="20"
+            value={token1.marketPrice}
+          />
+        </div>
+      </div>
+
+      <div>
+        <div>{"Token 1 Bought:"}</div>
+        <div>{token1.purchaseQty}</div>
+        <div>
+          {"Token 0 Received"}
+          <span style={{ fontSize: 12, marginLeft: 4 }}>
+            {"(selling token 1 at given market conditions)"}
+          </span>
+        </div>
+        <div>
+          {tokenReceived.toFixed(2)}
+          <span
+            style={{
+              fontSize: 14,
+              marginLeft: 4,
+              fontWeight: 600,
+              color: isProfit ? "green" : "red",
+            }}
+          >{`(${isProfit ? "+" : ""} ${profit.toFixed(2)})`}</span>
+        </div>
+      </div>
+      <div>
         {chartObj.length > 0 && (
-          <AreaChart
-            width={1000}
-            height={450}
-            data={chartObj}
-            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-          >
-            {/* <CartesianGrid strokeDasharray="3 3" /> */}
-            <XAxis dataKey="token0Price" />
+          <LineChart width={1000} height={800} data={chartObj}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="token1Price" />
             <YAxis />
             <Tooltip />
             <Legend />
-            <Area dataKey={getKey(1)} fill="#22ca9d" />;
-            <Area type="monotone" dataKey={getKey(2)} stroke="#232f6e78" />;
-            <Area type="monotone" dataKey={getKey(3)} stroke="#82ca2d" />;
-            {/* {keys.map((key) => {
-              <Line type="monotone" dataKey={key} stroke="#82ca9d" />;
-            })} */}
-            {/* <Line type="monotone" dataKey="pv" stroke="#8884d8" /> */}
-          </AreaChart>
+            <Line type="monotone" dataKey="token1Out" stroke="#82ca9d" />
+          </LineChart>
+
+          // <ScatterChart width={1000} height={450}>
+          //   <CartesianGrid />
+          //   <XAxis
+          //     type="number"
+          //     dataKey="token0Price"
+          //     name="token0"
+          //     unit="FTM"
+          //   />
+          //   <YAxis
+          //     type="number"
+          //     dataKey="token1Price"
+          //     name="token1"
+          //     unit="BOO"
+          //   />
+          //   <Tooltip cursor={{ strokeDasharray: "3 3" }} />
+          //   <Scatter data={chartObj} fill="#8884d8" />
+          // </ScatterChart>
         )}
       </div>
     </>
