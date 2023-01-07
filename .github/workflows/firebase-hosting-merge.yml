@@ -2,44 +2,45 @@
 # https://github.com/firebase/firebase-tools
 
 # OLD:
-# name: Deploy to Firebase Hosting on merge
-# "on":
-#   push:
-#     branches:
-#       - main
-# jobs:
-#   build_and_deploy:
-#     name: Build&Deploy
-#     runs-on: ubuntu-latest
-#     steps:
-#       - uses: actions/checkout@v2
-#       - run: npm install && npm run build
-#       - uses: FirebaseExtended/action-hosting-deploy@v0
-#         with:
-#           repoToken: "${{ secrets.GITHUB_TOKEN }}"
-#           firebaseServiceAccount: "${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEFI_TOOLS_FRONTEND }}"
-#           channelId: live
-#           projectId: defi-tools-frontend
-
 name: Deploy to Firebase Hosting on merge
 "on":
   push:
     branches:
       - main
 jobs:
-  build:
+  build_and_deploy:
+    name: Build&Deploy
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
+      - run: npm install && npm ci && npm run build
+      - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
-          node-version: "12"
-      - run: npm ci
-      - run: npm run build
-      - name: GitHub Action for Firebase
-        uses: w9jds/firebase-action@v1.5.0
-        with:
-          args: deploy --only hosting
+          repoToken: "${{ secrets.GITHUB_TOKEN }}"
+          firebaseServiceAccount: "${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEFI_TOOLS_FRONTEND }}"
+          channelId: live
+          projectId: defi-tools-frontend
         env:
           REACT_APP_UNISWAP_V3_GRAPH_BASE_API: ${{ secrets.UNISWAP_V3_GRAPH_BASE_API}}
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEFI_TOOLS_FRONTEND }}
+# name: Deploy to Firebase Hosting on merge
+# "on":
+#   push:
+#     branches:
+#       - main
+# jobs:
+#   build:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v2
+#       - uses: actions/setup-node@v1
+#         with:
+#           node-version: "12"
+#       - run: npm ci
+#       - run: npm run build
+#       - name: GitHub Action for Firebase
+#         uses: w9jds/firebase-action@v1.5.0
+#         with:
+#           args: deploy --only hosting
+#         env:
+#           REACT_APP_UNISWAP_V3_GRAPH_BASE_API: ${{ secrets.UNISWAP_V3_GRAPH_BASE_API}}
+#           FIREBASE_TOKEN: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEFI_TOOLS_FRONTEND }}
