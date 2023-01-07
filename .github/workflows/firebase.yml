@@ -19,8 +19,6 @@ jobs:
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
-      - name: Clean Installation
-        run: rm -rf node_modules && rm -rf yarn.lock
       - uses: actions/checkout@v2
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v1
@@ -31,6 +29,8 @@ jobs:
         run: |
           yarn install
           yarn build
+        env:
+          CI: false
       - name: Archive Build
         uses: actions/upload-artifact@v2
         with:
