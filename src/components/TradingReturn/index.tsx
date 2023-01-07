@@ -1,13 +1,9 @@
 import React, { useState } from "react";
 import {
-  Area,
-  AreaChart,
   CartesianGrid,
   Legend,
   Line,
   LineChart,
-  Scatter,
-  ScatterChart,
   Tooltip,
   XAxis,
   YAxis,
@@ -68,7 +64,7 @@ export default function TradingReturn() {
     const tokenToSell = token1.purchaseQty;
 
     setTokenReceived((tokenToSell * token1.marketPrice) / token0.marketPrice);
-  }, [token0.marketPrice, token1.marketPrice]);
+  }, [token0.marketPrice, token1.marketPrice, token1.purchaseQty]);
 
   function BuyTime() {
     return (
@@ -188,7 +184,8 @@ export default function TradingReturn() {
     console.log(positions);
 
     return positions;
-  }, [token0.marketPrice, token1.marketPrice]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token0.marketPrice, token1.marketPrice, token1.purchaseQty]);
 
   const profit = tokenReceived - token0.purchaseQty;
 

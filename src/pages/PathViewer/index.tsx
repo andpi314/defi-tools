@@ -28,21 +28,15 @@ function Flow() {
 
   // const initialEdges = [{ id: "e1-2", source: "1", target: "2" }];
 
-  console.log(analysisNodes);
-
-  const parsedNodes: Node[] = useMemo(
-    () =>
-      analysisNodes.map((n, index) => {
-        const node: Node = {
-          id: n.address,
-          position: { x: index * 10, y: index * 100 },
-          data: { label: n.address },
-          style: { minWidth: 400 },
-        };
-        return node;
-      }),
-    [analysisNodes]
-  );
+  const parsedNodes: Node[] = analysisNodes.map((n, index) => {
+    const node: Node = {
+      id: n.address,
+      position: { x: index * 10, y: index * 100 },
+      data: { label: n.address },
+      style: { minWidth: 400 },
+    };
+    return node;
+  });
 
   const parsedEdges: Edge[] = useMemo(() => {
     const incoming = analysisNodes.reduce(
@@ -62,10 +56,11 @@ function Flow() {
       target: trx.from,
       label: trx.hash,
     }));
-  }, [analysisNodes]);
+  }, []);
 
   console.log(parsedEdges);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [nodes, setNodes, onNodesChange] = useNodesState<Node[]>(parsedNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge[]>(parsedEdges);
 

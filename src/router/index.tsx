@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import TradingReturn from "../components/TradingReturn";
 import Home from "../pages/Home";
 import PathViewer from "../pages/PathViewer";
 import UniswapHedge from "../pages/UniswapHedge";
@@ -12,6 +13,7 @@ export default function Routing() {
         <Route path="/" element={<UniswapHedge />} />
         <Route path="/home" element={<Home />} />
         <Route path="/path" element={<PathViewer />} />
+        <Route path="/trading-return" element={<TradingReturn />} />
       </Routes>
     </Router>
   );
