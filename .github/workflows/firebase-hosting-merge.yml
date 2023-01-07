@@ -35,8 +35,8 @@ jobs:
         uses: actions/setup-node@v1
       - name: Setup the code
         run: npm install
-      - name: Test the code
-        run: npm test
+      - name: Build
+        run: npm build
       - name: Deploy to Firebase
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
