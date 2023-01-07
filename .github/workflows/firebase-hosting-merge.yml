@@ -21,13 +21,11 @@
 #           channelId: live
 #           projectId: defi-tools-frontend
 
-name: Firebase Deploy
-
-on:
+name: Deploy to Firebase Hosting on merge
+"on":
   push:
     branches:
       - master
-
 jobs:
   build:
     runs-on: ubuntu-latest
