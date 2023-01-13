@@ -4,11 +4,10 @@ import {
   SupportedNetworks,
   UniswapGraphV3,
 } from "../../../scripts/uniswap";
-import { UniswapPoolTransaction } from "../../../scripts/uniswap/types";
-import { createRanges, DateRangeSampler } from "../../../utils/date";
+import { createRanges } from "../../../utils/date";
 import { sleep } from "../../../utils/fetch";
 
-const getRandomArbitrary = (min: number, max: number): number => {
+export const getRandomArbitrary = (min: number, max: number): number => {
   return Math.random() * (max - min) + min;
 };
 
@@ -56,8 +55,16 @@ export const useUniswapPoolData = () => {
             data.push(...swapsInRange);
             // cool stuff here
             await sleep(150);
+            console.warn(
+              `Fetching swaps for ${poolAddress} and range ${range.start} - ${range.end} | ${skip} / 5000`
+            );
           } while (hasNextPage && skip <= 5000);
 
+          if (skip >= 5000) {
+            console.warn(
+              `Reached max limit of 5000 swaps for ${poolAddress} and range ${range.start} - ${range.end}`
+            );
+          }
           return {
             range,
             data: data,
@@ -66,10 +73,9 @@ export const useUniswapPoolData = () => {
       );
 
       // Flat the data
-      const swaps = data.reduce(
-        (acc: any, item: any) => (acc = [...acc, ...item.data]),
-        []
-      );
+      const swaps = data
+        .reduce((acc: any, item: any) => (acc = [...acc, ...item.data]), [])
+        .sort((a: any, b: any) => a.timestamp - b.timestamp);
 
       setSwaps(swaps);
     } catch (e) {

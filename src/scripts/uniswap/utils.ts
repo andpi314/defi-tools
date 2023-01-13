@@ -22,8 +22,7 @@ export const transformEvent = (data: Event): TransformedPoolEvent => {
      * For ethereum: 1/((2129553765676570172321198961654853/2^96)^2/10^12)
      */
     // TODO: We should pick token decimals
-
-    price,
+    price: Math.min(price, priceInverse),
     priceInverse, //: 1 / ((parseInt(data.sqrtPriceX96) / 2 ** 96) ** 2 * 10 ** 12),
   };
 };
@@ -53,7 +52,14 @@ export const cleanEvent = (data: Event[]): TransformedPoolEvent[] => {
 
   const events = Object.entries(groupedByBlockNumber)
     .map(([blockNumber, events]) => {
-      if (events.length > 1) return undefined;
+      if (events.length > 1) {
+        console.log(
+          "Skipping event: too many events in block",
+          blockNumber,
+          events
+        );
+        return undefined;
+      }
       const mean =
         events.reduce((acc, event) => acc + event.price, 0) / events.length;
       return {

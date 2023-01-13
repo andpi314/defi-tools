@@ -19,8 +19,11 @@ export function groupByBlockNumber(
  * Discard records if there are many in the group
  */
 export function discardManyInGroup<T>(input: Grouped<T>): (T | undefined)[] {
-  return Object.values(input).map((groupElements) => {
-    if (groupElements.length > 1) return undefined;
+  return Object.entries(input || {}).map(([blockNumber, groupElements]) => {
+    if (groupElements.length > 1) {
+      console.log("discardManyInGroup", blockNumber, groupElements);
+      return undefined;
+    }
     return groupElements[0];
   });
 }
@@ -37,6 +40,8 @@ export interface EventMetrics extends Metrics {
 export function computeMetrics(
   events: (TransformedPoolEvent | undefined)[]
 ): EventMetrics {
+  let priceBeforeJump = 0;
+
   const metrics = events.reduce(
     (
       acc: Metrics,
@@ -58,7 +63,17 @@ export function computeMetrics(
 
       if (!prevEvent) {
         // Missing previous event, it has been discard so no way to compute l
-        console.log("Skipping event: missing in prev");
+
+        const deltaPrice = Math.abs(currEvent.price - priceBeforeJump);
+        const deltaPriceInverse = Math.abs(
+          currEvent.priceInverse - priceBeforeJump
+        );
+        acc.lSum = acc.lSum + deltaPrice;
+        acc.lSumInverse = acc.lSumInverse + deltaPriceInverse;
+        priceBeforeJump = currEvent.price;
+        console.log(
+          `Skipping event: missing prev, but adding ${deltaPrice} to lSum`
+        );
         return acc;
       }
 
@@ -81,7 +96,7 @@ export function computeMetrics(
 
       acc.lSum = acc.lSum + deltaPrice;
       acc.lSumInverse = acc.lSumInverse + deltaPriceInverse;
-
+      priceBeforeJump = currEvent.price;
       return acc;
     },
     {

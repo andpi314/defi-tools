@@ -13,6 +13,7 @@ export const useUniswapPools = () => {
   const getPools = async (network: SupportedNetworks) => {
     try {
       setLoading(true);
+      setData([]);
       const sdk = new UniswapGraphV3(network);
 
       const pools = await sdk.getPools();

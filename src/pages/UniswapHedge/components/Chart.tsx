@@ -33,6 +33,7 @@ export default function Chart({
   verticalLines,
   horizontalLines,
 }: ChartProps) {
+  console.warn("test");
   const { data, yMin, yMax } = useMemo(() => {
     const data = uniswapPoolTransaction;
 
@@ -45,7 +46,6 @@ export default function Chart({
     };
   }, [uniswapPoolTransaction]);
 
-  console.log("data", data, yMin, yMax);
   if (loading)
     return (
       <div
@@ -65,7 +65,7 @@ export default function Chart({
   //  if (error) return <p>{error}</p>;
   if (uniswapPoolTransaction.length === 0) return <p>{"No Data"}</p>;
 
-  console.log(data);
+  console.error("test");
   return (
     <ResponsiveContainer width={"100%"} height={"80%"}>
       <LineChart

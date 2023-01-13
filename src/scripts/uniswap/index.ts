@@ -12,6 +12,7 @@ export enum SupportedNetworks {
   ethereum = "ethereum",
   polygon = "polygon",
   arbitrum = "arbitrum",
+  optimism = "optimism",
 }
 
 export interface GetPoolsPool {
@@ -38,12 +39,15 @@ export class UniswapGraphV3 {
     [SupportedNetworks.arbitrum]: string;
     [SupportedNetworks.polygon]: string;
     [SupportedNetworks.ethereum]: string;
+    [SupportedNetworks.optimism]: string;
   } = {
     ethereum: "https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3",
     polygon:
       "https://api.thegraph.com/subgraphs/name/ianlapham/uniswap-v3-polygon",
     arbitrum:
       "https://api.thegraph.com/subgraphs/name/ianlapham/uniswap-arbitrum-one",
+    optimism:
+      "https://api.thegraph.com/subgraphs/name/ianlapham/optimism-post-regenesis",
   };
 
   constructor(network: SupportedNetworks) {

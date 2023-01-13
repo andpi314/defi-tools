@@ -16,13 +16,14 @@ export default function UniswapFee() {
   const [network, setNetwork] = useState<SupportedNetworks>(
     SupportedNetworks.ethereum
   );
+  const [samplingInterval, setSamplingInterval] = useState<number>(30);
   const [dateRangeEdit, setDateRangeEdit] = useState<{
     start: string;
     end: string;
   }>({
     end: new Date("2023-01-13T10:00:00.000Z").toISOString(),
     start: new Date(
-      new Date("2023-01-13T10:00:00.000Z").getTime() - 1000 * 60 * 60 * 24
+      new Date("2023-01-13T10:00:00.000Z").getTime() - 1000 * 60 * 60 * 1
     ).toISOString(),
   });
 
@@ -32,7 +33,7 @@ export default function UniswapFee() {
   }>({
     end: new Date("2023-01-13T10:00:00.000Z").toISOString(),
     start: new Date(
-      new Date("2023-01-13T10:00:00.000Z").getTime() - 1000 * 60 * 60 * 24
+      new Date("2023-01-13T10:00:00.000Z").getTime() - 1000 * 60 * 60 * 1
     ).toISOString(),
   });
 
@@ -42,6 +43,11 @@ export default function UniswapFee() {
 
   const { error, swaps, getSwaps, loading } = useUniswapPoolData();
 
+  const samplingIntervals = Math.ceil(
+    (new Date(dateRange.end).getTime() - new Date(dateRange.start).getTime()) /
+      (samplingInterval * 60 * 1000)
+  );
+
   const handleFetch = (poolAddress: string) => {
     console.log(`Fetching pool transactions for ${poolAddress}`);
     getSwaps(
@@ -49,7 +55,7 @@ export default function UniswapFee() {
       {
         startDate: dateRange.start,
         endDate: dateRange.end,
-        samples: 40,
+        samples: samplingIntervals,
       },
       network
     );
@@ -89,11 +95,23 @@ export default function UniswapFee() {
             setDateRangeEdit({ ...dateRange, end: e.target.value })
           }
         />
+        <Input
+          label="Sampling Interval (minutes)"
+          type={"number"}
+          step={1}
+          value={samplingInterval}
+          style={{ width: 80, marginRight: 16 }}
+          onChange={(e) => setSamplingInterval(parseInt(e.target.value))}
+        />
         <div style={{ width: 250, textAlign: "center", margin: "0px 16px" }}>
-          {`Range width: ${parseIntervalAsString(
-            dateRange.start,
-            dateRange.end
-          )}`}
+          <div>
+            {`Range width: ${parseIntervalAsString(
+              dateRange.start,
+              dateRange.end
+            )}`}
+          </div>
+
+          <div>{`Sampling intervals: ${samplingIntervals}`}</div>
         </div>
         <button
           style={{

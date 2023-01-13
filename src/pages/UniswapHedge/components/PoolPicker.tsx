@@ -27,7 +27,10 @@ export default function PoolPicker({
   return (
     <div>
       <SelectPool
-        onNetworkChange={onNetworkChange}
+        onNetworkChange={(network) => {
+          setPool("");
+          onNetworkChange(network);
+        }}
         pool={pool}
         onPoolChange={setAndFetch}
       />

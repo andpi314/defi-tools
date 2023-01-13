@@ -14,13 +14,14 @@ export default function SelectPool({
   onPoolChange,
   onNetworkChange,
 }: PoolSelectProps) {
-  const { getPools, pools } = useUniswapPools();
+  const { getPools, pools, loading } = useUniswapPools();
   const [network, setNetwork] = useState<SupportedNetworks>(
     SupportedNetworks.ethereum
   );
   const [pair, selectedPair] = useState<string>("");
 
   useEffect(() => {
+    console.log("network changed", network);
     getPools(network);
   }, [network]);
 
@@ -58,6 +59,7 @@ export default function SelectPool({
         onClick={(value) => {
           onNetworkChange(value as SupportedNetworks);
           setNetwork(value as SupportedNetworks);
+          selectedPair("");
         }}
         helpText="Select network"
         value={network}
@@ -67,6 +69,7 @@ export default function SelectPool({
         }))}
       />
       <Select
+        disabled={loading}
         style={{
           marginLeft: 8,
           width: 180,
@@ -75,7 +78,7 @@ export default function SelectPool({
         }}
         options={singlePairs}
         value={pair}
-        helpText={"Select a pair"}
+        helpText={loading ? "Loading..." : "Select a pair"}
         onClick={(value) => {
           selectedPair(value as string);
         }}

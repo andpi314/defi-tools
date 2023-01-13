@@ -3,6 +3,7 @@ export interface SelectProps {
   options: { label: string; value: string }[];
   value?: string;
   helpText?: string;
+  disabled?: boolean;
   onClick: (value: string) => void;
 }
 
@@ -12,10 +13,12 @@ export default function Select({
   helpText,
   value,
   style,
+  disabled,
 }: SelectProps) {
   const text = helpText ? helpText : "Please choose one option";
   return (
     <select
+      disabled={disabled}
       style={{ minHeight: 30, paddingRight: 16, ...(style && style) }}
       value={options.find((opt) => opt.value === value)?.value}
       onChange={(e) => {
