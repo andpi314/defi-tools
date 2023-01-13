@@ -3,24 +3,27 @@ import { useEffect, useState } from "react";
 
 export interface PoolPickerProps {
   onFetch: (pool: string) => void;
+  onPoolChange: (pool: string) => void;
+  selectedPool: string;
   fetchDisabled: boolean;
 }
 
 export default function PoolPicker({
+  selectedPool,
   onFetch,
   fetchDisabled,
+  onPoolChange,
 }: PoolPickerProps) {
-  const [pool, setPool] = useState<string>(
-    "0x7bea39867e4169dbe237d55c8242a8f2fcdcc387"
-  );
+  const [pool, setPool] = useState<string>(selectedPool);
 
   useEffect(() => {
     onFetch(pool);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [pool]);
 
   const setAndFetch = (pool: string) => {
     setPool(pool);
+    onPoolChange(pool);
     onFetch(pool);
   };
 

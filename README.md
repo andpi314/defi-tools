@@ -41,4 +41,5 @@ firebase login:use
 
 #### Project improvements
 
-- [] https://github.com/vojtajina/grunt-bump
+- [ ] https://github.com/vojtajina/grunt-bump
+- [ ] Add Context State to improve data handling across components

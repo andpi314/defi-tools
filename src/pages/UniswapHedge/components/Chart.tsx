@@ -10,8 +10,9 @@ import {
   YAxis,
 } from "recharts";
 import Loader from "../../../atomics/atom/loader";
-import { UniswapPoolTransaction, transformEvent } from "../useUniswapPool";
+
 import { useMemo } from "react";
+import { UniswapPoolTransaction } from "../../../scripts/uniswap/types";
 
 export interface Position {
   priceLower: number;
@@ -19,41 +20,35 @@ export interface Position {
 }
 
 export interface ChartProps {
-  position: Position;
   loading: boolean;
   error: any;
   data: UniswapPoolTransaction;
+  verticalLines?: { xValue: number; label: string; stroke?: string }[];
+  horizontalLines?: { yValue: number; label: string; stroke?: string }[];
 }
 
 export default function Chart({
-  position,
   error,
   data: uniswapPoolTransaction,
   loading,
+  verticalLines,
+  horizontalLines,
 }: ChartProps) {
-  const staticLines: { yValue: number; label: string; stroke?: string }[] = [
-    {
-      yValue: position.priceLower,
-      label: "rMin",
-    },
-    {
-      yValue: position.priceUpper,
-      label: "rMax",
-    },
-  ];
-
   const { data, yMin, yMax } = useMemo(() => {
-    const data = transformEvent(uniswapPoolTransaction.swaps).sort(
-      (a, b) => a.timestamp - b.timestamp
-    );
-    const yMin = Math.min(...data.map((d) => d.price));
-    const yMax = Math.max(...data.map((d) => d.price));
+    const data = [] as any;
+
+    // transformEvents(uniswapPoolTransaction.swaps).sort(
+    //   (a, b) => a.timestamp - b.timestamp
+    // );
+    const yMin = Math.min(...data.map((d: any) => d.price));
+    const yMax = Math.max(...data.map((d: any) => d.price));
     return {
       data,
-      yMin: Math.ceil(yMin - 0.1 * yMin),
-      yMax: Math.ceil(yMax + 0.1 * yMax),
+      yMin: Math.ceil(yMin - 0.005 * yMin),
+      yMax: Math.ceil(yMax + 0.005 * yMax),
     };
-  }, [uniswapPoolTransaction.swaps]);
+    // uniswapPoolTransaction.swaps
+  }, []);
 
   if (loading)
     return (
@@ -107,11 +102,18 @@ export default function Chart({
         {/* Vertical line */}
         {/* <ReferenceLine x="Page C" stroke="red" label="Max PV PAGE" /> */}
 
-        {staticLines.map((line) => (
+        {horizontalLines?.map((line) => (
           <ReferenceLine
             y={line.yValue}
             label={line.label}
             stroke={line.stroke || "red"}
+          />
+        ))}
+        {verticalLines?.map((vl) => (
+          <ReferenceLine
+            x={vl.xValue}
+            stroke={vl.stroke || "red"}
+            label={vl.label}
           />
         ))}
 

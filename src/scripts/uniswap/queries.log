@@ -1,0 +1,51 @@
+// Abritrum
+{
+ swaps(
+      first: 1
+      orderBy: timestamp
+      orderDirection: asc
+      where: {transaction: "0x7c52de93fd9585af82f2df57b6e0928683704cd7eec281ca58938c55c9464cfd"}
+  
+      subgraphError: allow
+    ) {
+      timestamp
+      pool {
+        feeTier
+        sqrtPrice
+        token0 {
+          id
+          symbol
+        }
+        token1 {
+          id
+          symbol
+        }
+      }
+      origin
+      amountUSD
+      amount0
+      amount1
+      sender
+      transaction {
+        id
+        blockNumber
+      }
+    }
+}
+// Pool data on blocknumber 
+{
+pools (where: {id:"0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640"}
+block:{number:16391100}){
+        feeTier
+        sqrtPrice
+        token0 {
+          id
+          symbol
+        }
+        token1 {
+          id
+          symbol
+        }
+      
+    }
+}
