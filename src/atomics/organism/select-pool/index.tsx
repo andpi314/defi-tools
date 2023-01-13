@@ -1,51 +1,99 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useUniswapPools } from "../../../pages/UniswapHedge/hooks/useUniswapPools";
+import { SupportedNetworks } from "../../../scripts/uniswap";
 import Select from "../../atom/select";
-import { useUniswapPools } from "../../../pages/UniswapHedge/useUniswapPool";
 
 export interface PoolSelectProps {
   pool: string;
   onPoolChange: (pool: string) => void;
+  onNetworkChange: (pool: string) => void;
 }
 
-export default function SelectPool({ pool, onPoolChange }: PoolSelectProps) {
-  const { fetch: fetchPools, data: pools } = useUniswapPools();
+export default function SelectPool({
+  pool,
+  onPoolChange,
+  onNetworkChange,
+}: PoolSelectProps) {
+  const { getPools, pools } = useUniswapPools();
+  const [network, setNetwork] = useState<SupportedNetworks>(
+    SupportedNetworks.ethereum
+  );
+  const [pair, selectedPair] = useState<string>("");
 
   useEffect(() => {
-    fetchPools();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    getPools(network);
+  }, [network]);
 
-  const availablePools = useMemo(() => {
-    return pools
-      ?.map((pool: any) => {
-        return {
-          label:
-            pool.token0.symbol +
-            "-" +
-            pool.token1.symbol +
-            " " +
-            pool.feeTier / 10000 +
-            "%",
-          value: pool.id,
-        };
-      })
-      .sort((a, b) => a.label.localeCompare(b.label));
+  const singlePairs = useMemo(() => {
+    const pairs = new Set<string>(); // {token0-token1}
+
+    pools?.forEach((pool) => {
+      const pair = `${pool.token0.symbol}-${pool.token1.symbol}`;
+      pairs.add(pair);
+    });
+
+    return (
+      Array.from(pairs)
+        //.sort((a, b) => a.localeCompare(b))
+        .map((pair) => ({ value: pair, label: pair }))
+    );
   }, [pools]);
 
+  const poolsByPair = useMemo(() => {
+    const eligiblePools = pools?.filter((pool) => {
+      const poolSignature = `${pool.token0.symbol}-${pool.token1.symbol}`;
+      return poolSignature === pair;
+    });
+    return eligiblePools?.map((pool) => ({
+      value: pool.id,
+      label: `${pool.token0.symbol}-${pool.token1.symbol} - ${
+        parseInt(pool.feeTier) / 10000
+      } %`,
+    }));
+  }, [pools, pair]);
+
   return (
-    <Select
-      style={{
-        marginLeft: 8,
-        width: 180,
-        border: "1px solid #000",
-        borderRadius: 2,
-      }}
-      options={availablePools}
-      value={pool}
-      helpText={"Select a pool"}
-      onClick={(value) => {
-        onPoolChange(value);
-      }}
-    />
+    <div style={{ display: "flex" }}>
+      <Select
+        onClick={(value) => {
+          onNetworkChange(value as SupportedNetworks);
+          setNetwork(value as SupportedNetworks);
+        }}
+        helpText="Select network"
+        value={network}
+        options={Object.values(SupportedNetworks).map((network) => ({
+          label: `Network: ${network}`,
+          value: network,
+        }))}
+      />
+      <Select
+        style={{
+          marginLeft: 8,
+          width: 180,
+          border: "1px solid #000",
+          borderRadius: 2,
+        }}
+        options={singlePairs}
+        value={pair}
+        helpText={"Select a pair"}
+        onClick={(value) => {
+          selectedPair(value as string);
+        }}
+      />
+      <Select
+        style={{
+          marginLeft: 8,
+          width: 180,
+          border: "1px solid #000",
+          borderRadius: 2,
+        }}
+        options={poolsByPair}
+        value={pool}
+        helpText={"Select a fee tier"}
+        onClick={(value) => {
+          onPoolChange(value);
+        }}
+      />
+    </div>
   );
 }

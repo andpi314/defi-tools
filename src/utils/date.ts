@@ -10,6 +10,30 @@ export interface DateRangeSamplerSettings {
   maxSamples?: number;
 }
 
+export function createRanges({
+  count,
+  end,
+  start,
+}: {
+  count: number;
+  end: Date;
+  start: Date;
+}): DateRange[] {
+  const ranges: DateRange[] = [];
+  const range = end.getTime() - start.getTime();
+  const step = range / count;
+  let current = start.getTime();
+  while (current < end.getTime()) {
+    const range = {
+      start: new Date(current).getTime(),
+      end: new Date(current + step).getTime(),
+    };
+    ranges.push(range);
+    current += step;
+  }
+  return ranges;
+}
+
 /**
  * Create a range of equally spaced dates based on staring date, end date and max samples
  */

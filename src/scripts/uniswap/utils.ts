@@ -1,6 +1,17 @@
 import { TransformedPoolEvent, Event } from "./types";
 
 export const transformEvent = (data: Event): TransformedPoolEvent => {
+  const price = (parseFloat(data.sqrtPriceX96) / 2 ** 96) ** 2 * 10 ** 12;
+  const priceInverse =
+    (1 / (parseFloat(data.sqrtPriceX96) / 2 ** 96) ** 2) * 10 ** 12;
+  // console.log(
+  //   "transformEvent",
+  //   price,
+  //   priceInverse,
+  //   data.sqrtPriceX96,
+  //   data.transaction.blockNumber,
+  //   data.transaction.id
+  // );
   return {
     raw: data,
     timestamp: parseInt(data.timestamp),
@@ -10,11 +21,10 @@ export const transformEvent = (data: Event): TransformedPoolEvent => {
      * For arbitrum: (2948911363741185401360272/2^96)^2*10^12
      * For ethereum: 1/((2129553765676570172321198961654853/2^96)^2/10^12)
      */
-    price:
-      (parseInt(data.historicalPoolData.sqrtPrice) / 2 ** 96) ** 2 * 10 ** 12,
-    priceInverse:
-      1 /
-      ((parseInt(data.historicalPoolData.sqrtPrice) / 2 ** 96) ** 2 * 10 ** 12),
+    // TODO: We should pick token decimals
+
+    price,
+    priceInverse, //: 1 / ((parseInt(data.sqrtPriceX96) / 2 ** 96) ** 2 * 10 ** 12),
   };
 };
 

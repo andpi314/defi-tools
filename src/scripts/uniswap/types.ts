@@ -31,6 +31,7 @@ export interface Event {
   amount0: string;
   amount1: string;
   amountUSD: string;
+  sqrtPriceX96: string;
   owner: string;
   pool: Pool;
   timestamp: string;

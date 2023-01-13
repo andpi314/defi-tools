@@ -1,10 +1,9 @@
 import { useMemo, useState } from "react";
-import Select from "../../atomics/atom/select";
 import { SupportedNetworks } from "../../scripts/uniswap";
 import { parseIntervalAsString } from "../../utils/date";
 import Chart from "../UniswapHedge/components/Chart";
 import PoolPicker from "../UniswapHedge/components/PoolPicker";
-import { useUniswapPool } from "../UniswapHedge/useUniswapPool";
+import { useUniswapPoolData } from "../UniswapHedge/hooks/useUniswapPoolData";
 import Input from "./components/Input";
 import {
   computeMetrics,
@@ -14,36 +13,46 @@ import {
 
 export default function UniswapFee() {
   const [pool, setPool] = useState<string>("");
+  const [network, setNetwork] = useState<SupportedNetworks>(
+    SupportedNetworks.ethereum
+  );
   const [dateRangeEdit, setDateRangeEdit] = useState<{
     start: string;
     end: string;
   }>({
-    start: new Date().toISOString(),
-    end: new Date(new Date().getTime() - 1000 * 60 * 60 * 2).toISOString(),
+    end: new Date("2023-01-13T10:00:00.000Z").toISOString(),
+    start: new Date(
+      new Date("2023-01-13T10:00:00.000Z").getTime() - 1000 * 60 * 60 * 24
+    ).toISOString(),
   });
 
   const [dateRange, setDateRange] = useState<{
     start: string;
     end: string;
   }>({
-    start: new Date().toISOString(),
-    end: new Date(new Date().getTime() - 1000 * 60 * 60 * 2).toISOString(),
+    end: new Date("2023-01-13T10:00:00.000Z").toISOString(),
+    start: new Date(
+      new Date("2023-01-13T10:00:00.000Z").getTime() - 1000 * 60 * 60 * 24
+    ).toISOString(),
   });
 
   const updateDateRange = () => {
     setDateRange(dateRangeEdit);
   };
 
-  const {
-    transactions: { loading, error, data: transactions, fetch },
-  } = useUniswapPool();
+  const { error, swaps, getSwaps, loading } = useUniswapPoolData();
 
   const handleFetch = (poolAddress: string) => {
     console.log(`Fetching pool transactions for ${poolAddress}`);
-    fetch(poolAddress, {
-      startDate: dateRange.start,
-      endDate: dateRange.end,
-    });
+    getSwaps(
+      poolAddress,
+      {
+        startDate: dateRange.start,
+        endDate: dateRange.end,
+        samples: 40,
+      },
+      network
+    );
   };
 
   // useEffect(() => {
@@ -51,28 +60,18 @@ export default function UniswapFee() {
   // }, []);
 
   const processedData = useMemo(() => {
-    if (!transactions || !transactions.swaps.length) return undefined;
+    if (!swaps.length) return undefined;
 
-    const data = transactions.swaps;
-
-    const grouped = groupByBlockNumber(data);
+    const grouped = groupByBlockNumber(swaps);
 
     const eligible = discardManyInGroup(grouped);
 
     return computeMetrics(eligible);
-  }, [transactions]);
+  }, [swaps]);
 
   return (
     <>
       <p>{"Uniswap Fee"}</p>
-      <Select
-        onClick={(value) => console.log(value)}
-        helpText="Select network"
-        options={Object.values(SupportedNetworks).map((network) => ({
-          label: `Network: ${network}`,
-          value: network,
-        }))}
-      />
       <div style={{ display: "flex", margin: "12px 0px" }}>
         <Input
           label="Start Date"
@@ -113,17 +112,20 @@ export default function UniswapFee() {
       </div>
 
       <PoolPicker
+        onNetworkChange={(pool) => setNetwork(pool as any)}
         onPoolChange={setPool}
         selectedPool={pool}
         fetchDisabled={loading}
         onFetch={(pool) => handleFetch(pool)}
       />
-      <p>{`Processing ${transactions.swaps.length} transactions`}</p>
+      <p>{`Processing ${swaps.length} transactions`}</p>
       <p>{`Computed L is: ${processedData?.lSum || "N/A"}`}</p>
+      <p>{`Computed L (inverse of price) is: ${
+        processedData?.lSumInverse || "N/A"
+      }`}</p>
 
-      <div style={{ display: "flex", margin: "auto" }}>
-        <Chart loading={loading} error={error} data={transactions} />
-      </div>
+      <Chart loading={loading} error={error} data={processedData?.data || []} />
+      {processedData && processedData?.data?.length > 0 && <></>}
     </>
   );
 }

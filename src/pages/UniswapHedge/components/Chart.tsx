@@ -12,7 +12,7 @@ import {
 import Loader from "../../../atomics/atom/loader";
 
 import { useMemo } from "react";
-import { UniswapPoolTransaction } from "../../../scripts/uniswap/types";
+import { TransformedPoolEvent } from "../../../scripts/uniswap/types";
 
 export interface Position {
   priceLower: number;
@@ -22,34 +22,30 @@ export interface Position {
 export interface ChartProps {
   loading: boolean;
   error: any;
-  data: UniswapPoolTransaction;
+  data: TransformedPoolEvent[];
   verticalLines?: { xValue: number; label: string; stroke?: string }[];
   horizontalLines?: { yValue: number; label: string; stroke?: string }[];
 }
 
 export default function Chart({
-  error,
   data: uniswapPoolTransaction,
   loading,
   verticalLines,
   horizontalLines,
 }: ChartProps) {
   const { data, yMin, yMax } = useMemo(() => {
-    const data = [] as any;
+    const data = uniswapPoolTransaction;
 
-    // transformEvents(uniswapPoolTransaction.swaps).sort(
-    //   (a, b) => a.timestamp - b.timestamp
-    // );
-    const yMin = Math.min(...data.map((d: any) => d.price));
-    const yMax = Math.max(...data.map((d: any) => d.price));
+    const yMin = Math.min(...data.map((d: any) => d.priceInverse));
+    const yMax = Math.max(...data.map((d: any) => d.priceInverse));
     return {
       data,
       yMin: Math.ceil(yMin - 0.005 * yMin),
       yMax: Math.ceil(yMax + 0.005 * yMax),
     };
-    // uniswapPoolTransaction.swaps
-  }, []);
+  }, [uniswapPoolTransaction]);
 
+  console.log("data", data, yMin, yMax);
   if (loading)
     return (
       <div
@@ -66,9 +62,10 @@ export default function Chart({
       </div>
     );
 
-  if (error) return <p>{error}</p>;
-  if (uniswapPoolTransaction.swaps.length === 0) return <p>{"No Data"}</p>;
+  //  if (error) return <p>{error}</p>;
+  if (uniswapPoolTransaction.length === 0) return <p>{"No Data"}</p>;
 
+  console.log(data);
   return (
     <ResponsiveContainer width={"100%"} height={"80%"}>
       <LineChart
@@ -117,7 +114,12 @@ export default function Chart({
           />
         ))}
 
-        <Line dot={false} type="monotone" dataKey="price" stroke="#8884d8" />
+        <Line
+          dot={false}
+          type="monotone"
+          dataKey="priceInverse"
+          stroke="#8884d8"
+        />
         {/* <Line type="monotone" dataKey="uv" stroke="#82ca9d" /> */}
       </LineChart>
     </ResponsiveContainer>

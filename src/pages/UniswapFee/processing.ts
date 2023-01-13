@@ -27,6 +27,7 @@ export function discardManyInGroup<T>(input: Grouped<T>): (T | undefined)[] {
 
 export interface Metrics {
   lSum: number;
+  lSumInverse: number;
 }
 
 export interface EventMetrics extends Metrics {
@@ -61,7 +62,10 @@ export function computeMetrics(
         return acc;
       }
 
-      const deltaPrice = currEvent.price - prevEvent.price;
+      const deltaPrice = Math.abs(currEvent.price - prevEvent.price);
+      const deltaPriceInverse = Math.abs(
+        prevEvent.priceInverse - currEvent.priceInverse
+      );
 
       console.log(
         "Computing L",
@@ -76,15 +80,18 @@ export function computeMetrics(
       // const payedFee = (deltaPrice * currEvent.price) / 100;
 
       acc.lSum = acc.lSum + deltaPrice;
+      acc.lSumInverse = acc.lSumInverse + deltaPriceInverse;
 
       return acc;
     },
     {
       lSum: 0,
+      lSumInverse: 0,
     }
   );
   return {
     lSum: metrics.lSum,
+    lSumInverse: metrics.lSumInverse,
     data: events.filter((el) => !!el) as TransformedPoolEvent[],
   };
 }

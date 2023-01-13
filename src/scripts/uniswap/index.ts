@@ -1,8 +1,9 @@
 import axios from "axios";
-
+import { Event } from "./types";
 export interface GetSwapProps {
   poolAddress: string;
   first?: number;
+  skip?: number;
   timestampGte: number;
   timestampLt: number;
 }
@@ -11,6 +12,24 @@ export enum SupportedNetworks {
   ethereum = "ethereum",
   polygon = "polygon",
   arbitrum = "arbitrum",
+}
+
+export interface GetPoolsPool {
+  id: string;
+  feeTier: string;
+  volumeUSD: string;
+  token0: {
+    id: string;
+    symbol: string;
+    name: string;
+    decimals: string;
+  };
+  token1: {
+    id: string;
+    symbol: string;
+    name: string;
+    decimals: string;
+  };
 }
 
 export class UniswapGraphV3 {
@@ -24,7 +43,7 @@ export class UniswapGraphV3 {
     polygon:
       "https://api.thegraph.com/subgraphs/name/ianlapham/uniswap-v3-polygon",
     arbitrum:
-      "https://api.thegraph.com/subgraphs/name/ianlapham/uniswap-v3-arbitrum",
+      "https://api.thegraph.com/subgraphs/name/ianlapham/uniswap-arbitrum-one",
   };
 
   constructor(network: SupportedNetworks) {
@@ -138,11 +157,13 @@ export class UniswapGraphV3 {
     timestampGte,
     timestampLt,
     first,
-  }: GetSwapProps) {
+    skip,
+  }: GetSwapProps): Promise<any[]> {
     const query = `
-    query transactions($address: Bytes!, $timestampGte: BigInt!, $timestampLt: BigInt!, $first: Int!) {
+    query transactions($address: Bytes!, $timestampGte: BigInt!, $timestampLt: BigInt!, $first: Int!, $skip: Int!) {
     swaps(
       first: $first
+      skip: $skip
       orderBy: timestamp
       orderDirection: asc
       where: {pool: $address, timestamp_gte: $timestampGte, timestamp_lt: $timestampLt }
@@ -161,6 +182,7 @@ export class UniswapGraphV3 {
           symbol
         }
       }
+      sqrtPriceX96
       origin
       amountUSD
       amount0
@@ -180,6 +202,7 @@ export class UniswapGraphV3 {
         timestampGte,
         timestampLt,
         first: first || 1000,
+        skip: skip || 0,
       },
     });
 
@@ -188,21 +211,46 @@ export class UniswapGraphV3 {
 
   public async getPool(poolAddress: string, blockNumber: number) {
     const query = `
-      query pools($address: Bytes!, $blockNumber: Int!){
-        pools (
-          where: {id:$address}
-          block:{number:$blockNumber}){
-                sqrtPrice
-            }
-      }`;
-
+    query pool($address: Bytes!, $blockNumber: Int!){
+      pool(block: {number: $blockNumber }, id: $address){
+        sqrtPrice
+    }
+    `;
     const response = await this.fetch(query, {
-      operationName: "pools",
+      operationName: "pool",
       variables: {
         address: poolAddress,
         blockNumber,
       },
     });
-    return response.data.data?.pools;
+    return response.data.data?.pool;
+  }
+
+  public async getPools() {
+    const query = `
+    query pools{
+      pools (first: 400 orderBy: volumeUSD orderDirection: desc){
+              id
+              feeTier
+              volumeUSD
+              token0 {
+                id
+                symbol
+                name
+                decimals
+              }
+              token1 {
+                id
+                symbol
+                name
+                decimals
+              }
+          }
+  }`;
+
+    const response = await this.fetch(query, {
+      operationName: "pools",
+    });
+    return response.data.data?.pools as GetPoolsPool[];
   }
 }
