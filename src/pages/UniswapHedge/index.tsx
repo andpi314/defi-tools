@@ -41,7 +41,12 @@ export default function UniswapHedge() {
 
   const handleFetch = (poolAddress: string) => {
     console.log("Fetching pool transactions...", poolAddress);
-    fetchPoolTransactions(poolAddress, 200);
+    fetchPoolTransactions(poolAddress, {
+      startDate: new Date(
+        new Date().getTime() - 1000 * 60 * 60 * 2
+      ).toISOString(),
+      endDate: new Date().toISOString(),
+    });
   };
 
   /**

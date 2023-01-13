@@ -87,16 +87,17 @@ export const useUniswapPool = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(undefined);
 
-  const fetchPoolTransactions = async (poolAddress: string, first?: number) => {
+  const fetchPoolTransactions = async (
+    poolAddress: string,
+    params: { startDate: string; endDate: string }
+  ) => {
     try {
       setError(undefined);
       setLoading(true);
 
-      const startDate = new Date(1673517832101 - 1000 * 60 * 60 * 15); //new Date(new Date().getTime() - );
-
       const ranges = new DateRangeSampler({
-        start: startDate,
-        end: new Date(1673521432101),
+        start: new Date(params.startDate),
+        end: new Date(params.endDate),
         maxSamples: 30,
       }).getRanges();
 

@@ -1,5 +1,5 @@
 import SelectPool from "../../../atomics/organism/select-pool";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export interface PoolPickerProps {
   onFetch: (pool: string) => void;
@@ -15,11 +15,6 @@ export default function PoolPicker({
   onPoolChange,
 }: PoolPickerProps) {
   const [pool, setPool] = useState<string>(selectedPool);
-
-  useEffect(() => {
-    onFetch(pool);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pool]);
 
   const setAndFetch = (pool: string) => {
     setPool(pool);
