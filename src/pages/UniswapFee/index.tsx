@@ -142,6 +142,21 @@ export default function UniswapFee() {
         processedData?.lSumInverse || "N/A"
       }`}</p>
 
+      <span
+        style={{
+          padding: 4,
+          borderRadius: 2,
+          color: "white",
+          backgroundColor:
+            processedData?.lastProcessedIndex ===
+            (processedData?.data.length || 1) - 1
+              ? "green"
+              : "red",
+        }}
+      >{`L integrity check: processed ${
+        (processedData?.lastProcessedIndex || -1) + 1
+      } out of ${processedData?.data.length}`}</span>
+
       <Chart loading={loading} error={error} data={processedData?.data || []} />
       {processedData && processedData?.data?.length > 0 && <></>}
     </>

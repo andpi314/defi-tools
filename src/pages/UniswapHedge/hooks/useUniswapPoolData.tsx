@@ -55,9 +55,6 @@ export const useUniswapPoolData = () => {
             data.push(...swapsInRange);
             // cool stuff here
             await sleep(150);
-            console.warn(
-              `Fetching swaps for ${poolAddress} and range ${range.start} - ${range.end} | ${skip} / 5000`
-            );
           } while (hasNextPage && skip <= 5000);
 
           if (skip >= 5000) {

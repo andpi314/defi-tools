@@ -1,52 +1,17 @@
-import {
-  CartesianGrid,
-  Legend,
-  Line,
-  LineChart,
-  ReferenceLine,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Line } from "react-chartjs-2";
+import { CategoryScale } from "chart.js";
+import Chart from "chart.js/auto";
 import Loader from "../../../atomics/atom/loader";
-
-import { useMemo } from "react";
-import { TransformedPoolEvent } from "../../../scripts/uniswap/types";
-
-export interface Position {
-  priceLower: number;
-  priceUpper: number;
-}
+Chart.register(CategoryScale);
 
 export interface ChartProps {
   loading: boolean;
   error: any;
-  data: TransformedPoolEvent[];
-  verticalLines?: { xValue: number; label: string; stroke?: string }[];
-  horizontalLines?: { yValue: number; label: string; stroke?: string }[];
+  data: any[];
 }
 
-export default function Chart({
-  data: uniswapPoolTransaction,
-  loading,
-  verticalLines,
-  horizontalLines,
-}: ChartProps) {
-  console.warn("test");
-  const { data, yMin, yMax } = useMemo(() => {
-    const data = uniswapPoolTransaction;
-
-    const yMin = Math.min(...data.map((d: any) => d.priceInverse));
-    const yMax = Math.max(...data.map((d: any) => d.priceInverse));
-    return {
-      data,
-      yMin: Math.ceil(yMin - 0.005 * yMin),
-      yMax: Math.ceil(yMax + 0.005 * yMax),
-    };
-  }, [uniswapPoolTransaction]);
-
-  if (loading)
+export default function CustomChart(p: ChartProps) {
+  if (p.loading)
     return (
       <div
         style={{
@@ -61,67 +26,54 @@ export default function Chart({
         <Loader />
       </div>
     );
+  if (p.error) return <div>Error: {p.error}</div>;
 
-  //  if (error) return <p>{error}</p>;
-  if (uniswapPoolTransaction.length === 0) return <p>{"No Data"}</p>;
+  //   console.log("p.data", p.data);
 
-  console.error("test");
+  const data = {
+    labels: p.data
+      //.filter((el) => !!el)
+      .map((el) => el?.createdOn || null),
+    // datasets is an array of objects where each object represents a set of data to display corresponding to the labels above. for brevity, we'll keep it at one object
+    datasets: [
+      {
+        id: 1,
+        label: "Main Pool",
+        stepped: true,
+        fill: false,
+        pointStyle: "false",
+        data: p.data
+          //.filter((el) => !!el)
+          .map((el) => el?.price || null),
+      },
+    ],
+  };
+
+  //   console.log("data", data);
+
   return (
-    <ResponsiveContainer width={"100%"} height={"80%"}>
-      <LineChart
-        width={500}
-        height={600}
+    <div style={{ margin: 32, paddingBottom: 96 }} className="chart-container">
+      <Line
         data={data}
-        margin={{
-          top: 20,
-          right: 50,
-          left: 20,
-          bottom: 5,
+        datasetIdKey="id"
+        options={{
+          spanGaps: true,
+          elements: {
+            point: {
+              radius: 0,
+            },
+          },
+          plugins: {
+            title: {
+              display: true,
+              text: "Transactions processed",
+            },
+            legend: {
+              display: false,
+            },
+          },
         }}
-      >
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis
-          style={{ height: 250 }}
-          dataKey="createdOn"
-          angle={-5}
-          textAnchor="end"
-          // padding={{ right: 50 }}
-        />
-        <YAxis
-          //   padding={{ bottom: 100, top: 100 }}
-          domain={
-            //["auto", "auto"],
-            [yMin, yMax]
-          }
-        />
-        <Tooltip />
-        <Legend />
-        {/* Vertical line */}
-        {/* <ReferenceLine x="Page C" stroke="red" label="Max PV PAGE" /> */}
-
-        {horizontalLines?.map((line) => (
-          <ReferenceLine
-            y={line.yValue}
-            label={line.label}
-            stroke={line.stroke || "red"}
-          />
-        ))}
-        {verticalLines?.map((vl) => (
-          <ReferenceLine
-            x={vl.xValue}
-            stroke={vl.stroke || "red"}
-            label={vl.label}
-          />
-        ))}
-
-        <Line
-          dot={false}
-          type="monotone"
-          dataKey="priceInverse"
-          stroke="#8884d8"
-        />
-        {/* <Line type="monotone" dataKey="uv" stroke="#82ca9d" /> */}
-      </LineChart>
-    </ResponsiveContainer>
+      />
+    </div>
   );
 }
