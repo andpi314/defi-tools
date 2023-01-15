@@ -157,7 +157,7 @@ export default function UniswapFee() {
         (processedData?.lastProcessedIndex || -1) + 1
       } out of ${processedData?.data.length}`}</span>
 
-      <Chart loading={loading} error={error} data={processedData?.data || []} />
+      <Chart loading={loading} error={error} data={processedData} />
       {processedData && processedData?.data?.length > 0 && <></>}
     </>
   );

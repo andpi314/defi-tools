@@ -7,7 +7,7 @@ Chart.register(CategoryScale);
 export interface ChartProps {
   loading: boolean;
   error: any;
-  data: any[];
+  data: any;
 }
 
 export default function CustomChart(p: ChartProps) {
@@ -28,23 +28,34 @@ export default function CustomChart(p: ChartProps) {
     );
   if (p.error) return <div>Error: {p.error}</div>;
 
-  //   console.log("p.data", p.data);
+  console.log("p.data", p.data);
 
   const data = {
-    labels: p.data
+    labels: p.data?.data
       //.filter((el) => !!el)
-      .map((el) => el?.createdOn || null),
+      .map((el: any) => el?.createdOn || null),
     // datasets is an array of objects where each object represents a set of data to display corresponding to the labels above. for brevity, we'll keep it at one object
     datasets: [
       {
         id: 1,
-        label: "Main Pool",
+        label: "Pool Price",
         stepped: true,
         fill: false,
+        yAxisID: "y",
         pointStyle: "false",
-        data: p.data
+        data: p.data?.data
           //.filter((el) => !!el)
-          .map((el) => el?.price || null),
+          .map((el: any) => el?.price || null),
+      },
+      {
+        id: 2,
+        label: "l Sum",
+        yAxisID: "y1",
+        // fill: false,
+        pointStyle: "false",
+        data: p.data?.lCumValues
+          //.filter((el) => !!el)
+          .map((el: any) => el?.value || null),
       },
     ],
   };
@@ -56,11 +67,71 @@ export default function CustomChart(p: ChartProps) {
       <Line
         data={data}
         datasetIdKey="id"
+        plugins={[
+          // DRAW VERTICAL LINE
+          {
+            id: "verticalLine",
+            afterDraw: (chart: { tooltip?: any; scales?: any; ctx?: any }) => {
+              // eslint-disable-next-line no-underscore-dangle
+              if (chart.tooltip._active && chart.tooltip._active.length) {
+                // find coordinates of tooltip
+                const activePoint = chart.tooltip._active[0];
+                const { ctx } = chart;
+                const { x } = activePoint.element;
+                const topY = chart.scales.y.top;
+                const bottomY = chart.scales.y.bottom;
+
+                // draw vertical line
+                ctx.save();
+                ctx.beginPath();
+                ctx.moveTo(x, topY);
+                ctx.lineTo(x, bottomY);
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = "#1C2128";
+                ctx.stroke();
+                ctx.restore();
+              }
+            },
+          },
+          // {
+          //   id: "verticalLine",
+          //   afterDatasetsDraw: (chart) => {
+          //     const ctx = chart.ctx;
+          //     const x =
+          //       chart.scales["x-axis-0"].getPixelForValue(1673395200000);
+          //     ctx.save();
+          //     ctx.beginPath();
+          //     ctx.moveTo(x, 0);
+          //     ctx.lineTo(x, chart.height);
+          //     ctx.lineWidth = 2;
+          //     ctx.strokeStyle = "#ff0000";
+          //     ctx.stroke();
+          //     ctx.restore();
+          //   },
+          // },
+        ]}
         options={{
           spanGaps: true,
           elements: {
             point: {
               radius: 0,
+            },
+          },
+          scales: {
+            y: {
+              type: "linear",
+              display: true,
+              position: "left",
+            },
+            y1: {
+              type: "linear",
+              display: true,
+              position: "right",
+
+              // grid line settings
+              grid: {
+                drawOnChartArea: false, // only want the grid lines for one axis to show up
+              },
             },
           },
           plugins: {

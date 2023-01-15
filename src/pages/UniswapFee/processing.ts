@@ -32,6 +32,7 @@ export interface Metrics {
   lSum: number;
   lSumInverse: number;
   lastProcessedIndex: number; // index of the last element whose price as been considered for the computation of L
+  lCumValues: ({ value: number; label: string } | undefined)[];
 }
 
 export interface EventMetrics extends Metrics {
@@ -55,6 +56,7 @@ export function computeMetrics(
       // Missing current event, it has been discard so no way to compute l
       if (!currEvent) {
         console.log("Skipping event: missing current");
+        acc.lCumValues = [...acc.lCumValues, undefined];
         return acc;
       }
 
@@ -70,6 +72,7 @@ export function computeMetrics(
           `Skipping event: first event | Setting priceBeforeJump at ${currEvent.price}`
         );
         priceBeforeJump = currEvent.price;
+        acc.lCumValues = [...acc.lCumValues, undefined];
         return acc;
       }
 
@@ -82,6 +85,7 @@ export function computeMetrics(
           `Skipping event: missing prev event and priceBeforeJump. Setting priceBeforeJump at ${currEvent.price}`
         );
         priceBeforeJump = currEvent.price;
+        acc.lCumValues = [...acc.lCumValues, undefined];
         return acc;
       }
 
@@ -97,6 +101,10 @@ export function computeMetrics(
         acc.lSumInverse = acc.lSumInverse + deltaPriceInverse;
         priceBeforeJump = currEvent.price;
         acc.lastProcessedIndex = index;
+        acc.lCumValues = [
+          ...acc.lCumValues,
+          { value: acc.lSum, label: currEvent.createdOn },
+        ];
         console.log(
           `Skipping event: missing prev, but adding ${deltaPrice} to lSum`
         );
@@ -115,6 +123,10 @@ export function computeMetrics(
       acc.lSum = acc.lSum + deltaPrice;
       acc.lSumInverse = acc.lSumInverse + deltaPriceInverse;
       priceBeforeJump = currEvent.price;
+      acc.lCumValues = [
+        ...acc.lCumValues,
+        { value: acc.lSum, label: currEvent.createdOn },
+      ];
       console.log(
         "Computing L",
         new Date(currEvent.createdOn).toISOString(),
@@ -133,12 +145,14 @@ export function computeMetrics(
       lSum: 0,
       lSumInverse: 0,
       lastProcessedIndex: 0,
+      lCumValues: [],
     }
   );
   return {
     lSum: metrics.lSum,
     lSumInverse: metrics.lSumInverse,
     lastProcessedIndex: metrics.lastProcessedIndex,
+    lCumValues: metrics.lCumValues,
     data: events as any, //.filter((el) => !!el) as TransformedPoolEvent[],
   };
 }
