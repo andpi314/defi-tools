@@ -33,7 +33,7 @@ export default function CustomChart(p: ChartProps) {
   const data = {
     labels: p.data?.data
       //.filter((el) => !!el)
-      .map((el: any) => el?.createdOn || null),
+      .map((el: any) => el?.timestamp || null),
     // datasets is an array of objects where each object represents a set of data to display corresponding to the labels above. for brevity, we'll keep it at one object
     datasets: [
       {
@@ -118,6 +118,9 @@ export default function CustomChart(p: ChartProps) {
             },
           },
           scales: {
+            // x: {
+            //   type: "time",
+            // },
             y: {
               type: "linear",
               display: true,

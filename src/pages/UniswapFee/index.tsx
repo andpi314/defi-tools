@@ -1,16 +1,15 @@
 import { useMemo, useState } from "react";
 import { SupportedNetworks } from "../../scripts/uniswap";
+import { transformEvent } from "../../scripts/uniswap/utils";
 import { parseIntervalAsString } from "../../utils/date";
 import Chart from "../UniswapHedge/components/Chart";
 import PoolPicker from "../UniswapHedge/components/PoolPicker";
 import { useUniswapPoolData } from "../UniswapHedge/hooks/useUniswapPoolData";
 import Input from "./components/Input";
-import {
-  computeMetrics,
-  discardManyInGroup,
-  groupByBlockNumber,
-} from "./processing";
+import { computeMetrics } from "./processing";
 
+const start = "2023-01-15T09:30:26.000Z";
+const end = "2023-01-16T09:12:09.207Z";
 export default function UniswapFee() {
   const [pool, setPool] = useState<string>("");
   const [network, setNetwork] = useState<SupportedNetworks>(
@@ -21,20 +20,16 @@ export default function UniswapFee() {
     start: string;
     end: string;
   }>({
-    end: new Date("2023-01-13T10:00:00.000Z").toISOString(),
-    start: new Date(
-      new Date("2023-01-13T10:00:00.000Z").getTime() - 1000 * 60 * 60 * 1
-    ).toISOString(),
+    end: new Date(end).toISOString(),
+    start: new Date(new Date(start).getTime()).toISOString(),
   });
 
   const [dateRange, setDateRange] = useState<{
     start: string;
     end: string;
   }>({
-    end: new Date("2023-01-13T10:00:00.000Z").toISOString(),
-    start: new Date(
-      new Date("2023-01-13T10:00:00.000Z").getTime() - 1000 * 60 * 60 * 1
-    ).toISOString(),
+    end: new Date(end).toISOString(),
+    start: new Date(new Date(start).getTime()).toISOString(),
   });
 
   const updateDateRange = () => {
@@ -68,11 +63,11 @@ export default function UniswapFee() {
   const processedData = useMemo(() => {
     if (!swaps.length) return undefined;
 
-    const grouped = groupByBlockNumber(swaps);
+    // const grouped = groupByBlockNumber(swaps);
 
-    const eligible = discardManyInGroup(grouped);
+    // const eligible = discardManyInGroup(grouped);
 
-    return computeMetrics(eligible);
+    return computeMetrics(swaps.map((el: any) => transformEvent(el)));
   }, [swaps]);
 
   return (
@@ -137,10 +132,80 @@ export default function UniswapFee() {
         onFetch={(pool) => handleFetch(pool)}
       />
       <p>{`Processing ${swaps.length} transactions`}</p>
-      <p>{`Computed L is: ${processedData?.lSum || "N/A"}`}</p>
-      <p>{`Computed L (inverse of price) is: ${
-        processedData?.lSumInverse || "N/A"
-      }`}</p>
+
+      <hr />
+
+      {/* // First row */}
+      <div style={{ display: "grid", gridTemplateColumns: ".2fr 1fr 1fr" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <b> {"Δ√l"} </b>
+        </div>
+        <div>
+          <span>
+            <b> {`Price  ${processedData?.data[0].price}`} </b>
+          </span>
+          <p>{`Computed Δl is: ${processedData?.lSum || "N/A"}`}</p>
+          <p>{`Computed Δ√l  is: ${processedData?.sqrtDelta || "N/A"}`}</p>
+          <p>{`Computed F = f * Δ(√l) is: ${
+            (processedData?.F || 0) * 1000 || "N/A"
+          } (* 10^-3)`}</p>
+        </div>
+        <div>
+          <span>
+            <b>{`Price Inverse (sqrtPricex96) ${processedData?.data[0].priceInverse}`}</b>
+          </span>
+          <p>{`Computed Δl is: ${processedData?.lSumInverse || "N/A"}`}</p>
+          <p>{`Computed Δ√l  is: ${
+            processedData?.sqrtDeltaPriceInverse || "N/A"
+          }`}</p>
+          <p>{`Computed F = f * Δ(√l) is: ${
+            (processedData?.FPriceInverse || 0) * 1000 || "N/A"
+          } (* 10^-3)`}</p>
+        </div>
+      </div>
+
+      {/* // Second row */}
+      <div style={{ display: "grid", gridTemplateColumns: ".2fr 1fr 1fr" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <b>{"Δ(1/√l)"} </b>
+        </div>
+        <div>
+          <p>{`Computed Δl (inverse of price) is: ${
+            processedData?.lSum || "N/A"
+          }`}</p>
+          <p>{`Computed Δ(1/√l)  (inverse of price) [delta in Token] is: ${
+            processedData?.sqrtDeltaInverse || "N/A"
+          }`}</p>
+          <p>{`Computed F = f * Δ(1/√l) is: ${
+            (processedData?.inverseF || 0) * 1000 || "N/A"
+          } (* 10^-3)`}</p>
+        </div>
+        <div>
+          <div>
+            <p>{`Computed Δl (inverse of price) is: ${
+              processedData?.lSumInverse || "N/A"
+            }`}</p>
+            <p>{`Computed Δ(1/√l)  (inverse of price) [delta in Token] is: ${
+              processedData?.sqrtDeltaInversePriceInverse || "N/A"
+            }`}</p>
+            <p>{`Computed F = f * Δ(1/√l) is: ${
+              (processedData?.inverseFPriceInverse || 0) * 1000 || "N/A"
+            } (* 10^-3)`}</p>
+          </div>
+        </div>
+      </div>
 
       <span
         style={{

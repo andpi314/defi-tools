@@ -78,10 +78,12 @@ export class UniswapGraphV3 {
           token0 {
             id
             symbol
+            decimals
           }
           token1 {
             id
             symbol
+            decimals
           }
           feeGrowthGlobal0X128
           feeGrowthGlobal1X128
@@ -91,6 +93,7 @@ export class UniswapGraphV3 {
         amount0
         amount1
         sender
+        id
         transaction {
           id
           blockNumber
@@ -125,18 +128,21 @@ export class UniswapGraphV3 {
           token0 {
             id
             symbol
+            decimals
           }
           feeTier
           token1 {
             id
             symbol
+            decimals
           }
         }
         origin
         amountUSD
         amount0
         amount1
-        sender
+        sender 
+        id
         transaction {
           id
           blockNumber
@@ -180,12 +186,15 @@ export class UniswapGraphV3 {
         token0 {
           id
           symbol
+          decimals
         }
         token1 {
           id
           symbol
+          decimals
         }
       }
+      id
       sqrtPriceX96
       origin
       amountUSD
@@ -233,7 +242,7 @@ export class UniswapGraphV3 {
   public async getPools() {
     const query = `
     query pools{
-      pools (first: 400 orderBy: volumeUSD orderDirection: desc){
+      pools (first: 1000 orderBy: volumeUSD orderDirection: desc){
               id
               feeTier
               volumeUSD

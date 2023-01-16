@@ -10,10 +10,12 @@ export interface Pool {
   token0: {
     id: string;
     symbol: string;
+    decimals: string;
   };
   token1: {
     id: string;
     symbol: string;
+    decimals: string;
   };
   sqrtPrice: string;
   feeTier: string;

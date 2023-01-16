@@ -1,9 +1,13 @@
 import { TransformedPoolEvent, Event } from "./types";
 
 export const transformEvent = (data: Event): TransformedPoolEvent => {
-  const price = (parseFloat(data.sqrtPriceX96) / 2 ** 96) ** 2 * 10 ** 12;
+  const decimals = Math.abs(
+    parseInt(data.pool.token0.decimals) - parseInt(data.pool.token1.decimals)
+  );
+  const price =
+    (parseFloat(data.sqrtPriceX96) / 2 ** 96) ** 2 * 10 ** -decimals;
   const priceInverse =
-    (1 / (parseFloat(data.sqrtPriceX96) / 2 ** 96) ** 2) * 10 ** 12;
+    (1 / (parseFloat(data.sqrtPriceX96) / 2 ** 96) ** 2) * 10 ** decimals;
   // console.log(
   //   "transformEvent",
   //   price,
@@ -22,11 +26,10 @@ export const transformEvent = (data: Event): TransformedPoolEvent => {
      * For ethereum: 1/((2129553765676570172321198961654853/2^96)^2/10^12)
      */
     // TODO: We should pick token decimals
-    price: Math.min(price, priceInverse),
+    price: price, //priceInverse),
     priceInverse, //: 1 / ((parseInt(data.sqrtPriceX96) / 2 ** 96) ** 2 * 10 ** 12),
   };
 };
-
 export const transformEvents = (data: Event[]): TransformedPoolEvent[] => {
   return data.map((event: Event) => transformEvent(event));
 };

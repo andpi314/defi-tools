@@ -33,6 +33,7 @@ export const useUniswapPoolData = () => {
 
       const data = await Promise.all(
         ranges.map(async (range) => {
+          await sleep(getRandomArbitrary(250, 4000));
           const data = [];
 
           const payload: GetSwapProps = {
@@ -54,11 +55,11 @@ export const useUniswapPoolData = () => {
             skip += entitiesPerPage;
             data.push(...swapsInRange);
             // cool stuff here
-            await sleep(150);
+            await sleep(getRandomArbitrary(150, 2400));
           } while (hasNextPage && skip <= 5000);
 
           if (skip >= 5000) {
-            console.warn(
+            throw new Error(
               `Reached max limit of 5000 swaps for ${poolAddress} and range ${range.start} - ${range.end}`
             );
           }
@@ -72,7 +73,12 @@ export const useUniswapPoolData = () => {
       // Flat the data
       const swaps = data
         .reduce((acc: any, item: any) => (acc = [...acc, ...item.data]), [])
-        .sort((a: any, b: any) => a.timestamp - b.timestamp);
+        .sort((a: any, b: any) => {
+          const indexA = a.id.split("#")[1];
+          const indexB = b.id.split("#")[1];
+          return indexA - indexB;
+        });
+      //   .sort((a: any, b: any) => a.timestamp - b.timestamp);
 
       setSwaps(swaps);
     } catch (e) {
