@@ -388,7 +388,8 @@ export function computePoolMetrics(
         const delta_x_signed =
           -delta_y_signed /
           (currEvent.price *
-            (1 + settings.swapFee / 100 + settings.slippage / 100));
+            // changed with pool fee settings.swapFee / 100
+            (1 + fee + settings.slippage / 100));
 
         console.log("LIQ UP", delta_x_signed, delta_y_signed, position);
 
@@ -414,8 +415,7 @@ export function computePoolMetrics(
 
         const delta_y_signed =
           -delta_x_signed *
-          (currEvent.price *
-            (1 - settings.swapFee / 100 - settings.slippage / 100));
+          (currEvent.price * (1 - fee - settings.slippage / 100));
 
         console.log("LIQ DOWN ", delta_x_signed, delta_y_signed, position);
 
@@ -452,12 +452,11 @@ export function computePoolMetrics(
   const delta_Y =
     metrics.F_y + metrics.deltaY_SqrtPrice + metrics.delta_y_signed;
 
+  const fee = parseInt(lastEvent.raw.pool.feeTier) / 10000 / 100;
+
   // ############### PnL ###############
   const pnl =
-    delta_Y +
-    delta_X *
-      (lastEvent.price *
-        (1 - settings.swapFee / 100 - settings.slippage / 100));
+    delta_Y + delta_X * (lastEvent.price * (1 - fee - settings.slippage / 100));
 
   // console.log("Metrics", metrics);
   return {
