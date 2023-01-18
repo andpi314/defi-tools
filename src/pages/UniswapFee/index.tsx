@@ -6,12 +6,22 @@ import Chart from "../UniswapHedge/components/Chart";
 import PoolPicker from "../UniswapHedge/components/PoolPicker";
 import { useUniswapPoolData } from "../UniswapHedge/hooks/useUniswapPoolData";
 import Input from "./components/Input";
-import { computeMetrics } from "./processing";
+import {
+  computeMetrics,
+  computePoolMetrics,
+  MetricsSettings,
+} from "./processing";
 
-const start = "2023-01-15T09:30:26.000Z";
-const end = "2023-01-16T09:12:09.207Z";
+const start = "2023-01-08T00:00:00.000Z";
+const end = "2023-01-18T00:00:00.000Z";
+
 export default function UniswapFee() {
   const [pool, setPool] = useState<string>("");
+  const [positionSettings, setPositionSettings] = useState<MetricsSettings>({
+    slippage: 0.1,
+    swapFee: 0.3,
+    hysteresis: 1.2,
+  });
   const [network, setNetwork] = useState<SupportedNetworks>(
     SupportedNetworks.ethereum
   );
@@ -56,18 +66,19 @@ export default function UniswapFee() {
     );
   };
 
-  // useEffect(() => {
-  //   fetchPool();
-  // }, []);
-
   const processedData = useMemo(() => {
     if (!swaps.length) return undefined;
 
-    // const grouped = groupByBlockNumber(swaps);
-
-    // const eligible = discardManyInGroup(grouped);
-
     return computeMetrics(swaps.map((el: any) => transformEvent(el)));
+  }, [swaps]);
+
+  const poolMetrics = useMemo(() => {
+    if (!swaps.length) return undefined;
+
+    return computePoolMetrics(
+      swaps.map((el: any) => transformEvent(el)),
+      positionSettings
+    );
   }, [swaps]);
 
   return (
@@ -205,6 +216,24 @@ export default function UniswapFee() {
             } (* 10^-3)`}</p>
           </div>
         </div>
+      </div>
+
+      <div style={{ border: "1px solid black", padding: 6, margin: 4 }}>
+        <p>{`Δx Total  : ${poolMetrics?.deltaX_SqrtPrice}`}</p>
+        <p>{`Δy Total  : ${poolMetrics?.deltaY_SqrtPrice}`}</p>
+
+        <p>{`Fx Total  : ${poolMetrics?.F_x}`}</p>
+        <p>{`Fy Total  : ${poolMetrics?.F_y}`}</p>
+
+        <p>{`Bot x Total  : ${poolMetrics?.delta_x_signed}`}</p>
+        <p>{`Bot y Total  : ${poolMetrics?.delta_y_signed}`}</p>
+
+        <p>{`ΔX  : ${poolMetrics?.delta_X}`}</p>
+        <p>{`ΔY  : ${poolMetrics?.delta_Y}`}</p>
+
+        <p>
+          {`Overall PnL  : ${poolMetrics?.pnl}`} <b>{"(* 1000)"}</b>
+        </p>
       </div>
 
       <span

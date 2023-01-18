@@ -1,3 +1,4 @@
+import { PanOnScrollMode } from "reactflow";
 import { TransformedPoolEvent, Event } from "../../scripts/uniswap/types";
 import { transformEvent } from "../../scripts/uniswap/utils";
 
@@ -26,6 +27,11 @@ export function discardManyInGroup<T>(input: Grouped<T>): (T | undefined)[] {
     }
     return groupElements[0];
   });
+}
+
+export function truncate(input: number, decimals: number) {
+  const [integerPart, decimalPart] = `${input}`.split(".");
+  return `${integerPart}.${decimalPart.slice(0, decimals)}`;
 }
 
 export interface Metrics {
@@ -59,7 +65,6 @@ export function computeMetrics(
       currEvent: TransformedPoolEvent | undefined,
       index: number
     ) => {
-      console.log("computeMetrics", index);
       // SKIPPING CONDITIONS
 
       // Missing current event, it has been discard so no way to compute l
@@ -268,5 +273,197 @@ export function computeMetrics(
 
     // Log Data
     lastProcessedIndex: metrics.lastProcessedIndex,
+  };
+}
+
+export interface PoolMetrics {
+  deltaY_SqrtPrice: number;
+  deltaX_SqrtPrice: number;
+  F_y: number;
+  F_x: number;
+  delta_x_signed: number;
+  delta_y_signed: number;
+}
+
+export interface PoolMetricsFinal extends PoolMetrics {
+  pnl: number;
+  delta_X: number;
+  delta_Y: number;
+}
+
+export interface PositionSettings {
+  lowerPrice: number;
+  mediumLowerPrice: number;
+  mediumUpperPrice: number;
+  upperPrice: number;
+}
+
+export interface MetricsSettings {
+  hysteresis: number;
+  slippage: number;
+  swapFee: number;
+}
+
+export function computePoolMetrics(
+  events: TransformedPoolEvent[],
+  settings: MetricsSettings
+): PoolMetricsFinal {
+  const firstEvent = events[0];
+
+  // console.log("First price", firstEvent);
+
+  let position = {
+    lowerPrice: firstEvent.price * (1 - (1.5 * settings.hysteresis) / 100),
+    mediumLowerPrice:
+      firstEvent.price * (1 - (0.5 * settings.hysteresis) / 100),
+    mediumUpperPrice:
+      firstEvent.price * (1 + (0.5 * settings.hysteresis) / 100),
+    upperPrice: firstEvent.price * (1 + (1.5 * settings.hysteresis) / 100),
+  };
+
+  // console.log("STARTING POSITION", position);
+
+  const lastIndex = events.length - 1;
+
+  const metrics: PoolMetrics = events.reduce(
+    (acc: PoolMetrics, currEvent: TransformedPoolEvent, index: number) => {
+      if (index === 0) {
+        return acc;
+      }
+
+      if (lastIndex === index) {
+        // keep last element for the last swap
+        return acc;
+      }
+
+      // if (index > 4) return acc;
+
+      const fee = parseInt(currEvent.raw.pool.feeTier) / 10000 / 100;
+
+      const prevEvent = events[index - 1];
+
+      // ############### RANGE ###############
+      const deltaY_SqrtPrice =
+        Math.sqrt(currEvent.price) - Math.sqrt(prevEvent.price);
+
+      const deltaX_SqrtPrice =
+        1 / Math.sqrt(currEvent.price) - 1 / Math.sqrt(prevEvent.price);
+
+      acc.deltaY_SqrtPrice = acc.deltaY_SqrtPrice + deltaY_SqrtPrice;
+      acc.deltaX_SqrtPrice = acc.deltaX_SqrtPrice + deltaX_SqrtPrice;
+      // ############### RANGE ###############
+
+      console.log(
+        index,
+        "SQRT",
+        deltaX_SqrtPrice,
+        deltaY_SqrtPrice,
+        "| cum",
+        acc.deltaX_SqrtPrice,
+        acc.deltaY_SqrtPrice,
+        "| price",
+        currEvent.price,
+        prevEvent.price
+      );
+
+      // ############### FEE ###############
+      const F_y = Math.max(deltaY_SqrtPrice, 0) * fee;
+      const F_x = Math.max(deltaX_SqrtPrice, 0) * fee;
+
+      acc.F_y = acc.F_y + F_y;
+      acc.F_x = acc.F_x + F_x;
+      // ############### FEE ###############
+
+      // ############### RANGE MOVE ###############
+      if (currEvent.price > position.upperPrice) {
+        // ############### Move liquidity UP ###############
+
+        // Delta y to move (not adjusted for price shift above target price)
+
+        const delta_y_signed =
+          Math.sqrt(position.lowerPrice) -
+          Math.sqrt(position.mediumLowerPrice) -
+          (Math.sqrt(currEvent.price) - Math.sqrt(position.upperPrice));
+
+        const delta_x_signed =
+          -delta_y_signed /
+          (currEvent.price *
+            (1 + settings.swapFee / 100 + settings.slippage / 100));
+
+        console.log("LIQ UP", delta_x_signed, delta_y_signed, position);
+
+        acc.delta_x_signed = acc.delta_x_signed + delta_x_signed;
+        acc.delta_y_signed = acc.delta_y_signed + delta_y_signed;
+
+        // Liquidity shift
+        position.lowerPrice = position.mediumLowerPrice;
+        position.mediumLowerPrice = position.mediumUpperPrice;
+        position.mediumUpperPrice = position.upperPrice;
+        position.upperPrice =
+          position.upperPrice * (1 + settings.hysteresis / 100);
+        // ############### Move liquidity U P ###############
+      }
+
+      if (currEvent.price < position.lowerPrice) {
+        // ############### Move liquidity DOWN ###############
+
+        const delta_x_signed =
+          1 / Math.sqrt(position.upperPrice) -
+          1 / Math.sqrt(position.mediumUpperPrice) -
+          (1 / Math.sqrt(currEvent.price) - 1 / Math.sqrt(position.lowerPrice));
+
+        const delta_y_signed =
+          -delta_x_signed *
+          (currEvent.price *
+            (1 - settings.swapFee / 100 - settings.slippage / 100));
+
+        console.log("LIQ DOWN ", delta_x_signed, delta_y_signed, position);
+
+        acc.delta_y_signed = acc.delta_y_signed + delta_y_signed;
+        acc.delta_x_signed = acc.delta_x_signed + delta_x_signed;
+        // Liquidity shift
+        position.upperPrice = position.mediumUpperPrice;
+        position.mediumUpperPrice = position.mediumLowerPrice;
+        position.mediumLowerPrice = position.lowerPrice;
+        position.lowerPrice =
+          position.lowerPrice * (1 - settings.hysteresis / 100);
+      }
+      // ############### RANGE MOVE ###############
+
+      return acc;
+    },
+    {
+      deltaY_SqrtPrice: 0,
+      deltaX_SqrtPrice: 0,
+      F_y: 0,
+      F_x: 0,
+      delta_x_signed: 0,
+      delta_y_signed: 0,
+    }
+  );
+
+  const lastEvent = events[lastIndex];
+
+  // console.log("Last price", lastEvent);
+
+  // ############### SUM OF METRICS ###############
+  const delta_X =
+    metrics.F_x + metrics.deltaX_SqrtPrice + metrics.delta_x_signed;
+  const delta_Y =
+    metrics.F_y + metrics.deltaY_SqrtPrice + metrics.delta_y_signed;
+
+  // ############### PnL ###############
+  const pnl =
+    delta_Y +
+    delta_X *
+      (lastEvent.price *
+        (1 - settings.swapFee / 100 - settings.slippage / 100));
+
+  // console.log("Metrics", metrics);
+  return {
+    ...metrics,
+    delta_X,
+    delta_Y,
+    pnl: pnl * 1000,
   };
 }

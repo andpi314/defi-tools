@@ -14,6 +14,8 @@ import Loader from "../../../atomics/atom/loader";
 
 Chart.register(LinearScale, PointElement, LineElement, Tooltip, Legend);
 
+// new Date(1674000000000).toISOString() -- new Date(1673136000000).toISOString()
+
 export interface ChartProps {
   loading: boolean;
   error: any;
