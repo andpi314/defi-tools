@@ -3,7 +3,9 @@ import { routes } from "../../router";
 
 export default function NavBar() {
   return (
-    <div style={{ display: "flex", width: "100%" }}>
+    <div
+      style={{ display: "flex", width: "100%", marginBottom: 32, padding: 16 }}
+    >
       {routes.map((route) => (
         <Link
           key={route.path}
