@@ -146,94 +146,97 @@ export default function UniswapFee() {
 
       <hr />
 
-      {/* // First row */}
-      <div style={{ display: "grid", gridTemplateColumns: ".2fr 1fr 1fr" }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <b> {"Δ√l"} </b>
-        </div>
+      <div style={{ display: "grid", gridTemplateColumns: "3fr 1fr" }}>
         <div>
-          <span>
-            <b> {`Price  ${processedData?.data[0].price}`} </b>
-          </span>
-          <p>{`Computed Δl is: ${processedData?.lSum || "N/A"}`}</p>
-          <p>{`Computed Δ√l  is: ${processedData?.sqrtDelta || "N/A"}`}</p>
-          <p>{`Computed F = f * Δ(√l) is: ${
-            (processedData?.F || 0) * 1000 || "N/A"
-          } (* 10^-3)`}</p>
-        </div>
-        <div>
-          <span>
-            <b>{`Price Inverse (sqrtPricex96) ${processedData?.data[0].priceInverse}`}</b>
-          </span>
-          <p>{`Computed Δl is: ${processedData?.lSumInverse || "N/A"}`}</p>
-          <p>{`Computed Δ√l  is: ${
-            processedData?.sqrtDeltaPriceInverse || "N/A"
-          }`}</p>
-          <p>{`Computed F = f * Δ(√l) is: ${
-            (processedData?.FPriceInverse || 0) * 1000 || "N/A"
-          } (* 10^-3)`}</p>
-        </div>
-      </div>
+          {/* // First row */}
+          <div style={{ display: "grid", gridTemplateColumns: ".2fr 1fr 1fr" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <b> {"Δ√l"} </b>
+            </div>
+            <div>
+              <span>
+                <b> {`Price  ${processedData?.data[0].price}`} </b>
+              </span>
+              <p>{`Computed Δl is: ${processedData?.lSum || "N/A"}`}</p>
+              <p>{`Computed Δ√l  is: ${processedData?.sqrtDelta || "N/A"}`}</p>
+              <p>{`Computed F = f * Δ(√l) is: ${
+                (processedData?.F || 0) * 1000 || "N/A"
+              } (* 10^-3)`}</p>
+            </div>
+            <div>
+              <span>
+                <b>{`Price Inverse (sqrtPricex96) ${processedData?.data[0].priceInverse}`}</b>
+              </span>
+              <p>{`Computed Δl is: ${processedData?.lSumInverse || "N/A"}`}</p>
+              <p>{`Computed Δ√l  is: ${
+                processedData?.sqrtDeltaPriceInverse || "N/A"
+              }`}</p>
+              <p>{`Computed F = f * Δ(√l) is: ${
+                (processedData?.FPriceInverse || 0) * 1000 || "N/A"
+              } (* 10^-3)`}</p>
+            </div>
+          </div>
 
-      {/* // Second row */}
-      <div style={{ display: "grid", gridTemplateColumns: ".2fr 1fr 1fr" }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <b>{"Δ(1/√l)"} </b>
-        </div>
-        <div>
-          <p>{`Computed Δl (inverse of price) is: ${
-            processedData?.lSum || "N/A"
-          }`}</p>
-          <p>{`Computed Δ(1/√l)  (inverse of price) [delta in Token] is: ${
-            processedData?.sqrtDeltaInverse || "N/A"
-          }`}</p>
-          <p>{`Computed F = f * Δ(1/√l) is: ${
-            (processedData?.inverseF || 0) * 1000 || "N/A"
-          } (* 10^-3)`}</p>
-        </div>
-        <div>
-          <div>
-            <p>{`Computed Δl (inverse of price) is: ${
-              processedData?.lSumInverse || "N/A"
-            }`}</p>
-            <p>{`Computed Δ(1/√l)  (inverse of price) [delta in Token] is: ${
-              processedData?.sqrtDeltaInversePriceInverse || "N/A"
-            }`}</p>
-            <p>{`Computed F = f * Δ(1/√l) is: ${
-              (processedData?.inverseFPriceInverse || 0) * 1000 || "N/A"
-            } (* 10^-3)`}</p>
+          {/* // Second row */}
+          <div style={{ display: "grid", gridTemplateColumns: ".2fr 1fr 1fr" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <b>{"Δ(1/√l)"} </b>
+            </div>
+            <div>
+              <p>{`Computed Δl (inverse of price) is: ${
+                processedData?.lSum || "N/A"
+              }`}</p>
+              <p>{`Computed Δ(1/√l)  (inverse of price) [delta in Token] is: ${
+                processedData?.sqrtDeltaInverse || "N/A"
+              }`}</p>
+              <p>{`Computed F = f * Δ(1/√l) is: ${
+                (processedData?.inverseF || 0) * 1000 || "N/A"
+              } (* 10^-3)`}</p>
+            </div>
+            <div>
+              <div>
+                <p>{`Computed Δl (inverse of price) is: ${
+                  processedData?.lSumInverse || "N/A"
+                }`}</p>
+                <p>{`Computed Δ(1/√l)  (inverse of price) [delta in Token] is: ${
+                  processedData?.sqrtDeltaInversePriceInverse || "N/A"
+                }`}</p>
+                <p>{`Computed F = f * Δ(1/√l) is: ${
+                  (processedData?.inverseFPriceInverse || 0) * 1000 || "N/A"
+                } (* 10^-3)`}</p>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+        <div style={{ border: "1px solid black", padding: 6, margin: 4 }}>
+          <p>{`Δx Total  : ${poolMetrics?.deltaX_SqrtPrice}`}</p>
+          <p>{`Δy Total  : ${poolMetrics?.deltaY_SqrtPrice}`}</p>
 
-      <div style={{ border: "1px solid black", padding: 6, margin: 4 }}>
-        <p>{`Δx Total  : ${poolMetrics?.deltaX_SqrtPrice}`}</p>
-        <p>{`Δy Total  : ${poolMetrics?.deltaY_SqrtPrice}`}</p>
+          <p>{`Fx Total  : ${poolMetrics?.F_x}`}</p>
+          <p>{`Fy Total  : ${poolMetrics?.F_y}`}</p>
 
-        <p>{`Fx Total  : ${poolMetrics?.F_x}`}</p>
-        <p>{`Fy Total  : ${poolMetrics?.F_y}`}</p>
+          <p>{`Bot x Total  : ${poolMetrics?.delta_x_signed}`}</p>
+          <p>{`Bot y Total  : ${poolMetrics?.delta_y_signed}`}</p>
 
-        <p>{`Bot x Total  : ${poolMetrics?.delta_x_signed}`}</p>
-        <p>{`Bot y Total  : ${poolMetrics?.delta_y_signed}`}</p>
+          <p>{`ΔX  : ${poolMetrics?.delta_X}`}</p>
+          <p>{`ΔY  : ${poolMetrics?.delta_Y}`}</p>
 
-        <p>{`ΔX  : ${poolMetrics?.delta_X}`}</p>
-        <p>{`ΔY  : ${poolMetrics?.delta_Y}`}</p>
-
-        <p>
-          {`Overall PnL  : ${poolMetrics?.pnl}`} <b>{"(* 1000)"}</b>
-        </p>
+          <p style={{ borderBottom: "1px solid blue" }}>
+            {`Overall PnL  : ${poolMetrics?.pnl}`} <b>{"(* 1000)"}</b>
+          </p>
+        </div>
       </div>
 
       <span
