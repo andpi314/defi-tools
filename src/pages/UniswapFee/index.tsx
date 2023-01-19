@@ -5,6 +5,7 @@ import { parseIntervalAsString } from "../../utils/date";
 import Chart from "../UniswapHedge/components/Chart";
 import PoolPicker from "../UniswapHedge/components/PoolPicker";
 import { useUniswapPoolData } from "../UniswapHedge/hooks/useUniswapPoolData";
+import ChartPriceAndPnl from "./components/ChartPriceAndPnl";
 import Input from "./components/Input";
 import {
   computeMetrics,
@@ -15,12 +16,20 @@ import {
 const start = "2023-01-08T00:00:00.000Z";
 const end = "2023-01-18T00:00:00.000Z";
 
+/**
+ *
+ * Plot of histeresis
+ * - y pnl
+ * -x price
+ */
+
 export default function UniswapFee() {
   const [pool, setPool] = useState<string>("");
   const [positionSettings, setPositionSettings] = useState<MetricsSettings>({
     slippage: 0.1,
-    swapFee: 0.3,
-    hysteresis: 1.2,
+    swapFee: 0,
+    // expressed in tick
+    hysteresis: 2,
   });
   const [network, setNetwork] = useState<SupportedNetworks>(
     SupportedNetworks.ethereum
@@ -70,7 +79,7 @@ export default function UniswapFee() {
     if (!swaps.length) return undefined;
 
     return computeMetrics(swaps.map((el: any) => transformEvent(el)));
-  }, [swaps]);
+  }, [swaps, positionSettings, dateRange]);
 
   const poolMetrics = useMemo(() => {
     if (!swaps.length) return undefined;
@@ -79,11 +88,28 @@ export default function UniswapFee() {
       swaps.map((el: any) => transformEvent(el)),
       positionSettings
     );
-  }, [swaps]);
+  }, [swaps, positionSettings, dateRange]);
+  // const tick = getClosestTick(1260, 60);
+  // const price = getPriceFromTick(tick);
 
   return (
     <>
       <p>{"Uniswap Fee"}</p>
+      <div>
+        <Input
+          label="Histeresis"
+          value={positionSettings.hysteresis.toString()}
+          style={{ width: 200, marginRight: 16 }}
+          type={"number"}
+          step={1}
+          onChange={(e) =>
+            setPositionSettings({
+              ...positionSettings,
+              hysteresis: parseFloat(e.target.value),
+            })
+          }
+        />
+      </div>
       <div style={{ display: "flex", margin: "12px 0px" }}>
         <Input
           label="Start Date"
@@ -134,7 +160,6 @@ export default function UniswapFee() {
           {"Update Date Range"}
         </button>
       </div>
-
       <PoolPicker
         onNetworkChange={(pool) => setNetwork(pool as any)}
         onPoolChange={setPool}
@@ -143,9 +168,7 @@ export default function UniswapFee() {
         onFetch={(pool) => handleFetch(pool)}
       />
       <p>{`Processing ${swaps.length} transactions`}</p>
-
       <hr />
-
       <div style={{ display: "grid", gridTemplateColumns: "3fr 1fr" }}>
         <div>
           {/* // First row */}
@@ -221,7 +244,7 @@ export default function UniswapFee() {
           </div>
         </div>
         <div style={{ border: "1px solid black", padding: 6, margin: 4 }}>
-          <p>{`Δx Total  : ${poolMetrics?.deltaX_SqrtPrice}`}</p>
+          {/* <p>{`Δx Total  : ${poolMetrics?.deltaX_SqrtPrice}`}</p>
           <p>{`Δy Total  : ${poolMetrics?.deltaY_SqrtPrice}`}</p>
 
           <p>{`Fx Total  : ${poolMetrics?.F_x}`}</p>
@@ -231,14 +254,22 @@ export default function UniswapFee() {
           <p>{`Bot y Total  : ${poolMetrics?.delta_y_signed}`}</p>
 
           <p>{`ΔX  : ${poolMetrics?.delta_X}`}</p>
-          <p>{`ΔY  : ${poolMetrics?.delta_Y}`}</p>
+          <p>{`ΔY  : ${poolMetrics?.delta_Y}`}</p> */}
 
-          <p style={{ borderBottom: "1px solid blue" }}>
-            {`Overall PnL  : ${poolMetrics?.pnl}`} <b>{"(* 1000)"}</b>
+          <p style={{ borderTop: "1px solid blue" }}>
+            {`y_origin  : ${poolMetrics?.y_origin || 0}`}
           </p>
+          <p>{`y_final  : ${poolMetrics?.y_final || 0}`}</p>
+          <p>{`Overall PnL (y)  : ${poolMetrics?.pnl || 0}`}</p>
+          <p>
+            {`Overall PnL (y)  : ${(poolMetrics?.pnl || 0) * 1000}`}
+            <b>{" (* 1000)"}</b>
+          </p>
+          {/* <p style={{}}>
+            {`Overall PnL (y)  : ${poolMetrics?.pnl_y}`} <b>{"(* 1000)"}</b>
+          </p> */}
         </div>
       </div>
-
       <span
         style={{
           padding: 4,
@@ -254,7 +285,25 @@ export default function UniswapFee() {
         (processedData?.lastProcessedIndex || -1) + 1
       } out of ${processedData?.data.length}`}</span>
 
-      <Chart loading={loading} error={error} data={processedData} />
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
+        <div>
+          <Chart
+            subData={poolMetrics}
+            loading={loading}
+            error={error}
+            data={processedData}
+          />
+        </div>
+        <div>
+          <ChartPriceAndPnl
+            subData={poolMetrics}
+            loading={loading}
+            error={error}
+            data={processedData}
+          />
+        </div>
+      </div>
+
       {processedData && processedData?.data?.length > 0 && <></>}
     </>
   );

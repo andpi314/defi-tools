@@ -76,7 +76,8 @@ export default function SelectPool({
           border: "1px solid #000",
           borderRadius: 2,
         }}
-        options={singlePairs.sort((a, b) => a.label.localeCompare(b.label))}
+        options={singlePairs}
+        //.sort((a, b) => a.label.localeCompare(b.label))}
         value={pair}
         helpText={loading ? "Loading..." : "Select a pair"}
         onClick={(value) => {

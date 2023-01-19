@@ -277,31 +277,56 @@ export function computeMetrics(
 }
 
 export interface PoolMetrics {
-  deltaY_SqrtPrice: number;
-  deltaX_SqrtPrice: number;
+  // NEW pool metrics
+  y_bucket: number;
   F_y: number;
   F_x: number;
-  delta_x_signed: number;
-  delta_y_signed: number;
+  pnl_array: { time: number; value: number }[];
+  pnl_and_price: { price: number; pnl: number }[];
+  positionMovementEvent: { time: number; value: string }[];
 }
 
 export interface PoolMetricsFinal extends PoolMetrics {
   pnl: number;
-  delta_X: number;
-  delta_Y: number;
+  y_origin: number;
+  y_final: number;
 }
 
 export interface PositionSettings {
+  // + state price
+  statePrice: number;
+  // price
   lowerPrice: number;
-  mediumLowerPrice: number;
-  mediumUpperPrice: number;
   upperPrice: number;
+  centerPrice: number;
+  // tick
+  lowerTick: number;
+  upperTick: number;
+  centerTick: number;
 }
 
 export interface MetricsSettings {
+  // Now expressed in tick
   hysteresis: number;
   slippage: number;
   swapFee: number;
+}
+
+export function getClosestTick(
+  targetPrice: number,
+  tickSpacing: number
+): number {
+  for (let i = 1; i < 1_000_000; i++) {
+    const price = 1.0001 ** (i * tickSpacing);
+    if (Math.abs(price / targetPrice - 1) < tickSpacing / 2 / 10_000) {
+      return i * tickSpacing;
+    }
+  }
+  return 0;
+}
+
+export function getPriceFromTick(tick: number): number {
+  return 1.0001 ** tick;
 }
 
 export function computePoolMetrics(
@@ -312,157 +337,284 @@ export function computePoolMetrics(
 
   // console.log("First price", firstEvent);
 
-  let position = {
-    lowerPrice: firstEvent.price * (1 - (1.5 * settings.hysteresis) / 100),
-    mediumLowerPrice:
-      firstEvent.price * (1 - (0.5 * settings.hysteresis) / 100),
-    mediumUpperPrice:
-      firstEvent.price * (1 + (0.5 * settings.hysteresis) / 100),
-    upperPrice: firstEvent.price * (1 + (1.5 * settings.hysteresis) / 100),
+  // fee remains constant because all events are from the same pool
+  const fee = parseInt(firstEvent.raw.pool.feeTier) / 10_000 / 100;
+
+  const tickSpacing = fee * 2 * 10_000; // with feeTier of 3000 => 60
+
+  const closestTick = getClosestTick(firstEvent.price, tickSpacing);
+
+  // Compute tick
+  const lowerTick = closestTick - settings.hysteresis * tickSpacing;
+  const centerTick = closestTick;
+  const upperTick = closestTick + settings.hysteresis * tickSpacing;
+
+  let position: PositionSettings = {
+    // tick
+    lowerTick: lowerTick,
+    centerTick: centerTick,
+    upperTick: upperTick,
+    // state price
+    statePrice: firstEvent.price,
+    // prices
+    lowerPrice: getPriceFromTick(lowerTick),
+    centerPrice: getPriceFromTick(centerTick),
+    upperPrice: getPriceFromTick(upperTick),
   };
 
-  // console.log("STARTING POSITION", position);
+  const y_initial =
+    Math.sqrt(position.statePrice) - Math.sqrt(position.lowerPrice);
+  const x_initial =
+    1 / Math.sqrt(position.statePrice) - 1 / Math.sqrt(position.upperPrice);
+
+  // const y_origin =
+  //   y_initial +
+  //   x_initial *
+  //     (position.statePrice *
+  //       (1 + settings.swapFee / 100 + settings.slippage / 100));
 
   const lastIndex = events.length - 1;
 
+  let y_final = 0;
+  let x_final = 0;
   const metrics: PoolMetrics = events.reduce(
     (acc: PoolMetrics, currEvent: TransformedPoolEvent, index: number) => {
+      // ############### SKIP elements ###############
       if (index === 0) {
         return acc;
       }
 
-      if (lastIndex === index) {
-        // keep last element for the last swap
-        return acc;
-      }
-
+      // if (lastIndex === index) {
+      //   // keep last element for the last swap
+      //   return acc;
+      // }
       // if (index > 4) return acc;
+      // ############### SKIP elements ###############
 
       const fee = parseInt(currEvent.raw.pool.feeTier) / 10000 / 100;
 
       const prevEvent = events[index - 1];
 
-      // ############### RANGE ###############
-      const deltaY_SqrtPrice =
-        Math.sqrt(currEvent.price) - Math.sqrt(prevEvent.price);
-
-      const deltaX_SqrtPrice =
-        1 / Math.sqrt(currEvent.price) - 1 / Math.sqrt(prevEvent.price);
-
-      acc.deltaY_SqrtPrice = acc.deltaY_SqrtPrice + deltaY_SqrtPrice;
-      acc.deltaX_SqrtPrice = acc.deltaX_SqrtPrice + deltaX_SqrtPrice;
-      // ############### RANGE ###############
-
-      console.log(
-        index,
-        "SQRT",
-        deltaX_SqrtPrice,
-        deltaY_SqrtPrice,
-        "| cum",
-        acc.deltaX_SqrtPrice,
-        acc.deltaY_SqrtPrice,
-        "| price",
-        currEvent.price,
-        prevEvent.price
-      );
-
       // ############### FEE ###############
-      const F_y = Math.max(deltaY_SqrtPrice, 0) * fee;
-      const F_x = Math.max(deltaX_SqrtPrice, 0) * fee;
 
-      acc.F_y = acc.F_y + F_y;
-      acc.F_x = acc.F_x + F_x;
+      if (
+        currEvent.price < position.upperPrice &&
+        currEvent.price > position.lowerPrice
+      ) {
+        // add fee only for in range positions
+        const delta_SqrtPrice =
+          Math.sqrt(currEvent.price) - Math.sqrt(prevEvent.price);
+        const delta_SqrtPrice_inverse =
+          1 / Math.sqrt(currEvent.price) - 1 / Math.sqrt(prevEvent.price);
+
+        const F_y = Math.max(delta_SqrtPrice, 0) * fee;
+        acc.F_y = acc.F_y + F_y;
+
+        const F_x = Math.max(delta_SqrtPrice_inverse, 0) * fee;
+        acc.F_x = acc.F_x + F_x;
+      }
+
       // ############### FEE ###############
 
       // ############### RANGE MOVE ###############
       if (currEvent.price > position.upperPrice) {
         // ############### Move liquidity UP ###############
+        const y_range_old =
+          Math.sqrt(position.upperPrice) - Math.sqrt(position.lowerPrice);
+        acc.y_bucket = acc.y_bucket + y_range_old;
 
-        // Delta y to move (not adjusted for price shift above target price)
+        // swap all fees
+        acc.y_bucket =
+          acc.y_bucket +
+          acc.F_y +
+          acc.F_x * (currEvent.price * (1 - fee - settings.slippage / 100));
 
-        const delta_y_signed =
-          Math.sqrt(position.lowerPrice) -
-          Math.sqrt(position.mediumLowerPrice) -
-          (Math.sqrt(currEvent.price) - Math.sqrt(position.upperPrice));
+        // Reset fee counter
+        acc.F_x = 0;
+        acc.F_y = 0;
 
-        const delta_x_signed =
-          -delta_y_signed /
-          (currEvent.price *
-            // changed with pool fee settings.swapFee / 100
-            (1 + fee + settings.slippage / 100));
+        // Create new range
 
-        console.log("LIQ UP", delta_x_signed, delta_y_signed, position);
+        const lowerTick = position.centerTick;
+        const centerTick = position.upperTick;
+        const upperTick =
+          position.upperTick + settings.hysteresis * tickSpacing;
 
-        acc.delta_x_signed = acc.delta_x_signed + delta_x_signed;
-        acc.delta_y_signed = acc.delta_y_signed + delta_y_signed;
+        position = {
+          lowerTick: lowerTick,
+          centerTick: centerTick,
+          upperTick: upperTick,
+          statePrice: currEvent.price,
+          lowerPrice: getPriceFromTick(lowerTick),
+          centerPrice: getPriceFromTick(centerTick),
+          upperPrice: getPriceFromTick(upperTick),
+        };
 
-        // Liquidity shift
-        position.lowerPrice = position.mediumLowerPrice;
-        position.mediumLowerPrice = position.mediumUpperPrice;
-        position.mediumUpperPrice = position.upperPrice;
-        position.upperPrice =
-          position.upperPrice * (1 + settings.hysteresis / 100);
-        // ############### Move liquidity U P ###############
+        const y_new =
+          Math.sqrt(position.statePrice) - Math.sqrt(position.lowerPrice);
+        const x_new =
+          1 / Math.sqrt(position.statePrice) -
+          1 / Math.sqrt(position.upperPrice);
+
+        acc.y_bucket = acc.y_bucket - y_new;
+        acc.y_bucket =
+          acc.y_bucket -
+          x_new * (position.statePrice * (1 + fee + settings.slippage / 100));
+
+        acc.positionMovementEvent = [
+          ...acc.positionMovementEvent,
+          { time: parseInt(currEvent.raw.timestamp), value: "UP" },
+        ];
       }
 
       if (currEvent.price < position.lowerPrice) {
         // ############### Move liquidity DOWN ###############
+        const x_range_old =
+          1 / Math.sqrt(position.lowerPrice) -
+          1 / Math.sqrt(position.upperPrice);
 
-        const delta_x_signed =
-          1 / Math.sqrt(position.upperPrice) -
-          1 / Math.sqrt(position.mediumUpperPrice) -
-          (1 / Math.sqrt(currEvent.price) - 1 / Math.sqrt(position.lowerPrice));
+        let x_available = x_range_old + acc.F_x;
 
-        const delta_y_signed =
-          -delta_x_signed *
-          (currEvent.price * (1 - fee - settings.slippage / 100));
+        // Swap all fees
+        acc.y_bucket = acc.y_bucket + acc.F_y;
 
-        console.log("LIQ DOWN ", delta_x_signed, delta_y_signed, position);
+        // Reset fee counter
+        acc.F_x = 0;
+        acc.F_y = 0;
 
-        acc.delta_y_signed = acc.delta_y_signed + delta_y_signed;
-        acc.delta_x_signed = acc.delta_x_signed + delta_x_signed;
-        // Liquidity shift
-        position.upperPrice = position.mediumUpperPrice;
-        position.mediumUpperPrice = position.mediumLowerPrice;
-        position.mediumLowerPrice = position.lowerPrice;
-        position.lowerPrice =
-          position.lowerPrice * (1 - settings.hysteresis / 100);
+        // Create new range
+        const lowerTick =
+          position.lowerTick - settings.hysteresis * tickSpacing;
+        const centerTick = position.lowerTick;
+        const upperTick = position.centerTick;
+
+        position = {
+          lowerTick: lowerTick,
+          centerTick: centerTick,
+          upperTick: upperTick,
+          statePrice: currEvent.price,
+          lowerPrice: getPriceFromTick(lowerTick),
+          centerPrice: getPriceFromTick(centerTick),
+          upperPrice: getPriceFromTick(upperTick),
+        };
+
+        const y_new =
+          Math.sqrt(position.statePrice) - Math.sqrt(position.lowerPrice);
+        const x_new =
+          1 / Math.sqrt(position.statePrice) -
+          1 / Math.sqrt(position.upperPrice);
+
+        let y_to_obtain_via_swap = 0;
+
+        // take as much as possible from the bucket
+        if (acc.y_bucket >= y_new) {
+          y_to_obtain_via_swap = 0;
+          acc.y_bucket = acc.y_bucket - y_new;
+        } else {
+          y_to_obtain_via_swap = y_new - acc.y_bucket;
+          acc.y_bucket = 0;
+        }
+
+        // check how many x are still available after put aside the x_new for the swap (if any)
+
+        if (x_available >= x_new) {
+          x_available = x_available - x_new;
+        } else {
+          x_available = 0;
+          // add fee and swap because subtracting from the bucket
+          acc.y_bucket =
+            acc.y_bucket -
+            (x_new - x_available) *
+              position.statePrice *
+              (1 + fee + settings.slippage / 100);
+        }
+
+        // swap x left into y and add to the bucket
+        acc.y_bucket =
+          acc.y_bucket +
+          x_available *
+            (position.statePrice * (1 - fee - settings.slippage / 100));
+        // remove the one obtained
+        acc.y_bucket = acc.y_bucket - y_to_obtain_via_swap;
+
+        // Update event
+        acc.positionMovementEvent = [
+          ...acc.positionMovementEvent,
+          { time: parseInt(currEvent.raw.timestamp), value: "DOWN" },
+        ];
       }
       // ############### RANGE MOVE ###############
 
+      const x_now =
+        1 / Math.sqrt(currEvent.price) - 1 / Math.sqrt(position.upperPrice);
+
+      const y_now = Math.sqrt(currEvent.price) - Math.sqrt(position.lowerPrice);
+
+      x_final = acc.F_x + x_now;
+
+      y_final = y_now + acc.y_bucket + acc.F_y;
+
+      acc.pnl_array = [
+        ...acc.pnl_array,
+        { value: y_final, time: parseInt(currEvent.raw.timestamp) },
+      ];
+
+      // ############### PRICE & PNL for each event ###############
+      let y_from_x = 0;
+      if (x_final > x_initial) {
+        y_from_x =
+          (x_final - x_initial) *
+          currEvent.price *
+          (1 - fee - settings.slippage / 100);
+      } else {
+        y_from_x =
+          (x_final - x_initial) *
+          currEvent.price *
+          (1 + fee + settings.slippage / 100);
+      }
+
+      const pnl = y_final - y_initial + y_from_x;
+
+      acc.pnl_and_price = [
+        ...acc.pnl_and_price,
+        { price: currEvent.price, pnl },
+      ];
       return acc;
     },
     {
-      deltaY_SqrtPrice: 0,
-      deltaX_SqrtPrice: 0,
+      // New counter
       F_y: 0,
       F_x: 0,
-      delta_x_signed: 0,
-      delta_y_signed: 0,
+      y_bucket: 0,
+      pnl_array: [],
+      positionMovementEvent: [],
+      pnl_and_price: [],
     }
   );
 
+  // ############### FINAL PART ###############
   const lastEvent = events[lastIndex];
 
-  // console.log("Last price", lastEvent);
+  let y_from_x = 0;
+  if (x_final > x_initial) {
+    y_from_x =
+      (x_final - x_initial) *
+      lastEvent.price *
+      (1 - fee - settings.slippage / 100);
+  } else {
+    y_from_x =
+      (x_final - x_initial) *
+      lastEvent.price *
+      (1 + fee + settings.slippage / 100);
+  }
 
-  // ############### SUM OF METRICS ###############
-  const delta_X =
-    metrics.F_x + metrics.deltaX_SqrtPrice + metrics.delta_x_signed;
-  const delta_Y =
-    metrics.F_y + metrics.deltaY_SqrtPrice + metrics.delta_y_signed;
-
-  const fee = parseInt(lastEvent.raw.pool.feeTier) / 10000 / 100;
-
-  // ############### PnL ###############
-  const pnl =
-    delta_Y + delta_X * (lastEvent.price * (1 - fee - settings.slippage / 100));
+  const pnl = y_final - y_initial + y_from_x;
 
   // console.log("Metrics", metrics);
   return {
     ...metrics,
-    delta_X,
-    delta_Y,
-    pnl: pnl * 1000,
+    pnl,
+    y_origin: 0,
+    y_final,
   };
 }
