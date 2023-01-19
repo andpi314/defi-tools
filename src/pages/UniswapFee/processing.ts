@@ -554,11 +554,6 @@ export function computePoolMetrics(
 
       y_final = y_now + acc.y_bucket + acc.F_y;
 
-      acc.pnl_array = [
-        ...acc.pnl_array,
-        { value: y_final, time: parseInt(currEvent.raw.timestamp) },
-      ];
-
       // ############### PRICE & PNL for each event ###############
       let y_from_x = 0;
       if (x_final > x_initial) {
@@ -574,6 +569,11 @@ export function computePoolMetrics(
       }
 
       const pnl = y_final - y_initial + y_from_x;
+
+      acc.pnl_array = [
+        ...acc.pnl_array,
+        { value: pnl, time: parseInt(currEvent.raw.timestamp) },
+      ];
 
       acc.pnl_and_price = [
         ...acc.pnl_and_price,

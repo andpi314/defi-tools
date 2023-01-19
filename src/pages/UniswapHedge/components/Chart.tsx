@@ -121,7 +121,7 @@ export default function CustomChart(p: ChartProps) {
       {
         id: 2,
         hidden: true,
-        label: "PnL",
+        label: "PnL (in y)",
         stepped: true,
         yAxisID: "y1",
         showLine: true,
