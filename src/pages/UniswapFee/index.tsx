@@ -96,7 +96,6 @@ export default function UniswapFee() {
 
   return (
     <>
-      <p>{"Uniswap Fee"}</p>
       <div>
         <Input
           label="Histeresis"

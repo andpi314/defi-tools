@@ -1,5 +1,6 @@
 import { ethers } from "ethers";
-import { FtmScan } from "./ftm-scan/ftm-scan.sdk";
+import { Networks } from "./config";
+import { EtherscanScan } from "./ftm-scan/ftm-scan.sdk";
 
 type StandardConfig = {
   noCache: boolean;
@@ -7,13 +8,16 @@ type StandardConfig = {
 
 export class Portfolio {
   public readonly address: string;
-  private readonly client: FtmScan;
+  private readonly client: EtherscanScan;
   private readonly depositedAmountCache: number | undefined;
   constructor(address: string) {
-    if (!process.env.FTMSCAN_API_KEY)
+    if (!process.env.REACT_APP_ETHERSCAN_API_KEY)
       throw new Error("Can not find FTMSCAN_API_KEY in environment variables");
     this.address = address;
-    this.client = new FtmScan(process.env.FTMSCAN_API_KEY);
+    this.client = new EtherscanScan(
+      process.env.REACT_APP_ETHERSCAN_API_KEY,
+      Networks.MAINNET
+    );
   }
 
   public async getDepositedAmount(config?: StandardConfig): Promise<number> {

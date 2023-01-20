@@ -30,7 +30,7 @@
     "react-scripts": "5.0.1",
     "reactflow": "^11.4.0",
     "recharts": "^2.1.10",
-    "styled-components": "^5.3.5",
+    "styled-components": "^5.3.6",
     "typescript": "^4.7.2",
     "web-vitals": "^2.1.4"
   },
@@ -63,8 +63,12 @@
     ]
   },
   "devDependencies": {
+    "@types/styled-components": "^5.1.26",
     "nodemon": "^2.0.16",
     "parcel": "^2.6.2",
     "ts-node": "^10.8.1"
+  },
+  "resolutions": {
+    "styled-components": "^5"
   }
 }

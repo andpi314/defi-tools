@@ -1,13 +1,9 @@
-enum AvailableNetworks {
-  FTM = "FTM",
-}
-
-interface ClientConfig {}
-
 export enum Networks {
   MAINNET = "MAINNET",
+  FANTOM = "FANTOM",
 }
 
 export const ClientConfig = {
-  [Networks.MAINNET]: "https://api.ftmscan.com/api",
+  [Networks.FANTOM]: "https://api.ftmscan.com/api",
+  [Networks.MAINNET]: "http://api.etherscan.io/api",
 };
