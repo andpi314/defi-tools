@@ -1,5 +1,4 @@
 import axios from "axios";
-import { Event } from "./types";
 export interface GetSwapProps {
   poolAddress: string;
   first?: number;

@@ -1,4 +1,3 @@
-import { PanOnScrollMode } from "reactflow";
 import { TransformedPoolEvent, Event } from "../../scripts/uniswap/types";
 import { transformEvent } from "../../scripts/uniswap/utils";
 
@@ -276,22 +275,6 @@ export function computeMetrics(
   };
 }
 
-export interface PoolMetrics {
-  // NEW pool metrics
-  y_bucket: number;
-  F_y: number;
-  F_x: number;
-  pnl_array: { time: number; value: number }[];
-  pnl_and_price: { price: number; pnl: number }[];
-  positionMovementEvent: { time: number; value: string }[];
-}
-
-export interface PoolMetricsFinal extends PoolMetrics {
-  pnl: number;
-  y_origin: number;
-  y_final: number;
-}
-
 export interface PositionSettings {
   // + state price
   statePrice: number;
@@ -305,6 +288,26 @@ export interface PositionSettings {
   centerTick: number;
 }
 
+export interface PoolMetricsFinal extends PoolMetrics {
+  pnl: number;
+  y_origin: number;
+  y_final: number;
+  apy_hedged: number;
+}
+
+export interface PoolMetrics {
+  // NEW pool metrics
+  y_bucket: number;
+  F_y: number;
+  F_x: number;
+  pnl_array: { time: number; value: number }[];
+  pnl_and_price: { price: number; pnl: number }[];
+  positionMovementEvent: {
+    time: number;
+    value: string;
+    position: PositionSettings;
+  }[];
+}
 export interface MetricsSettings {
   // Now expressed in tick
   hysteresis: number;
@@ -317,9 +320,9 @@ export function getClosestTick(
   tickSpacing: number
 ): number {
   for (let i = 1; i < 1_000_000; i++) {
-    const price = 1.0001 ** (i * tickSpacing);
+    const price = 1.0001 ** ((i - 500_000) * tickSpacing);
     if (Math.abs(price / targetPrice - 1) < tickSpacing / 2 / 10_000) {
-      return i * tickSpacing;
+      return (i - 500_000) * tickSpacing;
     }
   }
   return 0;
@@ -463,7 +466,7 @@ export function computePoolMetrics(
 
         acc.positionMovementEvent = [
           ...acc.positionMovementEvent,
-          { time: parseInt(currEvent.raw.timestamp), value: "UP" },
+          { time: parseInt(currEvent.raw.timestamp), value: "UP", position },
         ];
       }
 
@@ -540,7 +543,7 @@ export function computePoolMetrics(
         // Update event
         acc.positionMovementEvent = [
           ...acc.positionMovementEvent,
-          { time: parseInt(currEvent.raw.timestamp), value: "DOWN" },
+          { time: parseInt(currEvent.raw.timestamp), value: "DOWN", position },
         ];
       }
       // ############### RANGE MOVE ###############
@@ -610,11 +613,21 @@ export function computePoolMetrics(
 
   const pnl = y_final - y_initial + y_from_x;
 
+  const seconds =
+    parseInt(lastEvent.raw.timestamp) - parseInt(firstEvent.raw.timestamp);
+  const seconds_in_year = 60 * 60 * 24 * 365;
+
+  const apy_hedged =
+    (pnl / (y_initial + x_initial * firstEvent.price) / seconds) *
+    seconds_in_year *
+    100;
+
   // console.log("Metrics", metrics);
   return {
     ...metrics,
     pnl,
-    y_origin: 0,
+    y_origin: y_initial,
     y_final,
+    apy_hedged,
   };
 }

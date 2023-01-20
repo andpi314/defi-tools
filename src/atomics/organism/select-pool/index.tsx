@@ -21,8 +21,8 @@ export default function SelectPool({
   const [pair, selectedPair] = useState<string>("");
 
   useEffect(() => {
-    console.log("network changed", network);
     getPools(network);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [network]);
 
   const singlePairs = useMemo(() => {
@@ -76,7 +76,8 @@ export default function SelectPool({
           border: "1px solid #000",
           borderRadius: 2,
         }}
-        options={singlePairs.sort((a, b) => a.label.localeCompare(b.label))}
+        options={singlePairs}
+        //.sort((a, b) => a.label.localeCompare(b.label))}
         value={pair}
         helpText={loading ? "Loading..." : "Select a pair"}
         onClick={(value) => {

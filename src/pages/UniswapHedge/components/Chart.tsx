@@ -11,48 +11,12 @@ import Loader from "../../../atomics/atom/loader";
 import annotationPlugin from "chartjs-plugin-annotation";
 import zoomPlugin from "chartjs-plugin-zoom";
 import React from "react";
+import { PositionSettings } from "../../UniswapFee/processing";
 
 // get random between range function with step
 function getRandomArbitrary(min: number, max: number, step: number) {
   return Math.floor((Math.random() * (max - min)) / step) * step + min;
 }
-
-const verticalLinePlugin = {
-  getLinePosition: function (chart: any, pointIndex: any) {
-    const meta = chart.getDatasetMeta(0); // first dataset is used to discover X coordinate of a point
-    const data = meta.data;
-    return data[pointIndex]._model.x;
-  },
-  renderVerticalLine: function (chartInstance: any, pointIndex: any) {
-    const lineLeftOffset = this.getLinePosition(chartInstance, pointIndex);
-    const scale = chartInstance.scales["y-axis-0"];
-    const context = chartInstance.chart.ctx;
-
-    // render vertical line
-    context.beginPath();
-    context.strokeStyle = "#ff0000";
-    context.moveTo(lineLeftOffset, scale.top);
-    context.lineTo(lineLeftOffset, scale.bottom);
-    context.stroke();
-
-    // write label
-    context.fillStyle = "#ff0000";
-    context.textAlign = "center";
-    context.fillText(
-      "MY TEXT",
-      lineLeftOffset,
-      (scale.bottom - scale.top) / 2 + scale.top
-    );
-  },
-
-  afterDatasetsDraw: function (chart: any, easing: any) {
-    if (chart.config.lineAtIndex) {
-      chart.config.lineAtIndex.forEach((pointIndex: any) =>
-        this.renderVerticalLine(chart, pointIndex)
-      );
-    }
-  },
-};
 
 Chart.register(
   LinearScale,
@@ -63,8 +27,6 @@ Chart.register(
   annotationPlugin,
   zoomPlugin
 );
-
-// new Date(1674000000000).toISOString() -- new Date(1673136000000).toISOString()
 
 export interface ChartProps {
   loading: boolean;
@@ -218,7 +180,6 @@ export default function CustomChart(p: ChartProps) {
                 },
                 drag: {
                   enabled: true,
-                  modifierKey: "ctrl",
                 },
                 mode: "x",
               },
@@ -243,6 +204,24 @@ export default function CustomChart(p: ChartProps) {
                   //   content: el.value || "TIP",
                   // },
                 })),
+                // // Box
+                // ...(p.subData?.positionMovementEvent || []).map(
+                //   (el: {
+                //     time: number;
+                //     value: string;
+                //     position: PositionSettings;
+                //   }) => {
+                //     return {
+                //       type: "box",
+                //       xMin: 1,
+                //       xMax: 2,
+                //       yMin: 50,
+                //       yMax: 70,
+                //       backgroundColor: "rgba(255, 99, 132, 0.25)",
+                //     };
+                //   }
+                // ),
+
                 // Label
                 ...(p.subData?.positionMovementEvent || []).map(
                   (el: any, index: any) => ({

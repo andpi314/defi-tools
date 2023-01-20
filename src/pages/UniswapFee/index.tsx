@@ -13,14 +13,17 @@ import {
   MetricsSettings,
 } from "./processing";
 
-const start = "2023-01-08T00:00:00.000Z";
+const start = "2023-01-16T00:00:00.000Z";
 const end = "2023-01-18T00:00:00.000Z";
 
 /**
+ * APY
+ * PnL y per unità di L
  *
- * Plot of histeresis
- * - y pnl
- * -x price
+ * APY (Hedging)):
+ * pnl (non per mille) / (y_initial + x * prezzo_iniziale)/ number_of_days *365 * 100
+ *
+ * @returns
  */
 
 export default function UniswapFee() {
@@ -77,9 +80,8 @@ export default function UniswapFee() {
 
   const processedData = useMemo(() => {
     if (!swaps.length) return undefined;
-
     return computeMetrics(swaps.map((el: any) => transformEvent(el)));
-  }, [swaps, positionSettings, dateRange]);
+  }, [swaps]);
 
   const poolMetrics = useMemo(() => {
     if (!swaps.length) return undefined;
@@ -88,7 +90,7 @@ export default function UniswapFee() {
       swaps.map((el: any) => transformEvent(el)),
       positionSettings
     );
-  }, [swaps, positionSettings, dateRange]);
+  }, [swaps, positionSettings]);
   // const tick = getClosestTick(1260, 60);
   // const price = getPriceFromTick(tick);
 
@@ -243,7 +245,24 @@ export default function UniswapFee() {
             </div>
           </div>
         </div>
-        <div style={{ border: "1px solid black", padding: 6, margin: 4 }}>
+        <div
+          style={{
+            padding: 12,
+            margin: 4,
+            borderRadius: 8,
+            borderTop: "1px solid #000",
+            boxShadow: "rgba(99, 99, 99, 0.2) 0px 2px 8px 0px",
+          }}
+        >
+          <p
+            style={{
+              fontFamily: "sans-serif",
+              fontWeight: 600,
+              letterSpacing: 0.2,
+            }}
+          >
+            {"Simulation report"}
+          </p>
           {/* <p>{`Δx Total  : ${poolMetrics?.deltaX_SqrtPrice}`}</p>
           <p>{`Δy Total  : ${poolMetrics?.deltaY_SqrtPrice}`}</p>
 
@@ -255,15 +274,30 @@ export default function UniswapFee() {
 
           <p>{`ΔX  : ${poolMetrics?.delta_X}`}</p>
           <p>{`ΔY  : ${poolMetrics?.delta_Y}`}</p> */}
-
-          <p style={{ borderTop: "1px solid blue" }}>
-            {`y_origin  : ${poolMetrics?.y_origin || 0}`}
-          </p>
+          <p>{`y_origin  : ${poolMetrics?.y_origin || 0}`}</p>
           <p>{`y_final  : ${poolMetrics?.y_final || 0}`}</p>
           <p>{`Overall PnL (y)  : ${poolMetrics?.pnl || 0}`}</p>
           <p>
             {`Overall PnL (y)  : ${(poolMetrics?.pnl || 0) * 1000}`}
             <b>{" (* 1000)"}</b>
+          </p>
+          <p>
+            {`APY Hedged (annualized):`}
+
+            {poolMetrics?.apy_hedged ? (
+              <span
+                style={{
+                  fontSize: 16,
+                  fontWeight: 600,
+                  marginLeft: 4,
+                  display: "inline-block",
+                  color: poolMetrics?.apy_hedged > 0 ? "#00a152" : "#f44336",
+                  fontFamily: "sans-serif",
+                }}
+              >{`${poolMetrics?.apy_hedged.toFixed(2) || 0} % `}</span>
+            ) : (
+              "N/A"
+            )}
           </p>
           {/* <p style={{}}>
             {`Overall PnL (y)  : ${poolMetrics?.pnl_y}`} <b>{"(* 1000)"}</b>

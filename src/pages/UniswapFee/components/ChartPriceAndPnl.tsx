@@ -12,11 +12,6 @@ import annotationPlugin from "chartjs-plugin-annotation";
 import zoomPlugin from "chartjs-plugin-zoom";
 import React from "react";
 
-// get random between range function with step
-function getRandomArbitrary(min: number, max: number, step: number) {
-  return Math.floor((Math.random() * (max - min)) / step) * step + min;
-}
-
 Chart.register(
   LinearScale,
   PointElement,
