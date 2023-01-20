@@ -1,26 +1,43 @@
 import { Scatter } from "react-chartjs-2";
-import { Line } from "react-chartjs-2";
 import {
-  CategoryScale,
   Legend,
   LinearScale,
   LineElement,
   PointElement,
-  TimeScale,
   Tooltip,
 } from "chart.js";
 import Chart from "chart.js/auto";
 import Loader from "../../../atomics/atom/loader";
+import annotationPlugin from "chartjs-plugin-annotation";
+import zoomPlugin from "chartjs-plugin-zoom";
+import React from "react";
+// import { PositionSettings } from "../../UniswapFee/processing";
 
-Chart.register(LinearScale, PointElement, LineElement, Tooltip, Legend);
+// get random between range function with step
+function getRandomArbitrary(min: number, max: number, step: number) {
+  return Math.floor((Math.random() * (max - min)) / step) * step + min;
+}
+
+Chart.register(
+  LinearScale,
+  PointElement,
+  LineElement,
+  Tooltip,
+  Legend,
+  annotationPlugin,
+  zoomPlugin
+);
 
 export interface ChartProps {
   loading: boolean;
   error: any;
   data: any;
+  subData?: any;
 }
 
 export default function CustomChart(p: ChartProps) {
+  const chartRef = React.useRef(null);
+
   if (p.loading)
     return (
       <div
@@ -38,7 +55,9 @@ export default function CustomChart(p: ChartProps) {
     );
   if (p.error) return <div>Error: {p.error}</div>;
 
-  console.log("p.data", p.data);
+  const yMax = Math.max(...(p.data?.data || []).map((el: any) => el.price));
+  const yMin = Math.min(...(p.data?.data || []).map((el: any) => el.price));
+  const yMid = yMax - (yMax - yMin) / 2;
 
   const data = {
     labels: p.data?.data
@@ -61,24 +80,45 @@ export default function CustomChart(p: ChartProps) {
           })),
         showLine: true,
       },
+      {
+        id: 2,
+        hidden: true,
+        label: "PnL (in y)",
+        stepped: true,
+        yAxisID: "y1",
+        showLine: true,
+        data: p.subData?.pnl_array.map((el: any) => ({
+          x: el?.time,
+          y: el.value,
+        })),
+      },
       // {
-      //   id: 2,
-      //   label: "l Sum",
-      //   yAxisID: "y1",
-      //   // fill: false,
-      //   pointStyle: "false",
-      //   data: p.data?.lCumValues
-      //     //.filter((el) => !!el)
-      //     .map((el: any) => el?.value || null),
+      //   id: 3,
+      //   label: "New Position",
+      //   data: p.subData?.positionMovementEvent.map((el: any) => ({
+      //     x: el?.time,
+      //     y: el.value,
+      //   })),
       // },
     ],
   };
 
-  //   console.log("data", data);
+  const handleResetZoom = () => {
+    if (chartRef && chartRef.current) {
+      (chartRef.current as any).resetZoom();
+    }
+  };
 
   return (
     <div style={{ margin: 32, paddingBottom: 96 }} className="chart-container">
+      <p>
+        {
+          "Zoom enabled: Hold Shift and use your mouse to zoom in (+) or out (-)"
+        }
+      </p>
+      <button onClick={handleResetZoom}>Reset Zoom</button>
       <Scatter
+        ref={chartRef}
         data={data}
         datasetIdKey="id"
         plugins={
@@ -93,6 +133,7 @@ export default function CustomChart(p: ChartProps) {
             //       const activePoint = chart.tooltip._active[0];
             //       const { ctx } = chart;
             //       const { x } = activePoint.element;
+            //       console.log("activePoint", x);
             //       const topY = chart.scales.y.top;
             //       const bottomY = chart.scales.y.bottom;
             //       // draw vertical line
@@ -126,12 +167,91 @@ export default function CustomChart(p: ChartProps) {
           ]
         }
         options={{
-          scales: {
-            y: {
-              beginAtZero: true,
+          maintainAspectRatio: true,
+          plugins: {
+            zoom: {
+              zoom: {
+                wheel: {
+                  enabled: true,
+                  modifierKey: "shift",
+                },
+                pinch: {
+                  enabled: true,
+                },
+                drag: {
+                  enabled: true,
+                },
+                mode: "x",
+              },
+            },
+            annotation: {
+              annotations: [
+                // Vertical line
+                ...(p.subData?.positionMovementEvent || []).map((el: any) => ({
+                  type: "line",
+                  id: "vline" + el.time,
+                  mode: "vertical",
+                  scaleID: "x",
+                  value: el.time, // - 250,
+                  borderColor: "black",
+                  // el.value === "UP"
+                  //   ? "rgb(0 128 2 / 50%)"
+                  //   : "rgb(255 0 0 / 50%)",
+                  borderWidth: 1,
+                  // label: {
+                  //   enabled: true,
+                  //   position: "top",
+                  //   content: el.value || "TIP",
+                  // },
+                })),
+                // // Box
+                // ...(p.subData?.positionMovementEvent || []).map(
+                //   (el: {
+                //     time: number;
+                //     value: string;
+                //     position: PositionSettings;
+                //   }) => {
+                //     return {
+                //       type: "box",
+                //       xMin: 1,
+                //       xMax: 2,
+                //       yMin: 50,
+                //       yMax: 70,
+                //       backgroundColor: "rgba(255, 99, 132, 0.25)",
+                //     };
+                //   }
+                // ),
+
+                // Label
+                ...(p.subData?.positionMovementEvent || []).map(
+                  (el: any, index: any) => ({
+                    type: "label",
+                    id: "label" + el.time,
+                    xValue: el.time, //- 250,
+                    yValue:
+                      el.value === `UP`
+                        ? getRandomArbitrary(yMid, yMax, 10)
+                        : getRandomArbitrary(yMin, yMid, 10),
+                    //    (el.value === "UP" ? +100 : -100),
+                    borderRadius: 8,
+                    backgroundColor: "rgba(245,245,245)",
+                    // el.value
+                    content: [`${index}`],
+                  })
+                ),
+              ],
             },
           },
-
+          scales: {
+            y: {
+              //   beginAtZero: true,
+              position: "left",
+            },
+            y1: {
+              beginAtZero: true,
+              position: "right",
+            },
+          },
           spanGaps: true,
           elements: {
             point: {
@@ -139,8 +259,6 @@ export default function CustomChart(p: ChartProps) {
             },
             line: {
               borderWidth: 1,
-              backgroundColor: "#000000",
-              borderColor: "#000000",
             },
           },
           // scales: {

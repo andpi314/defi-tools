@@ -21,8 +21,8 @@ export default function SelectPool({
   const [pair, selectedPair] = useState<string>("");
 
   useEffect(() => {
-    console.log("network changed", network);
     getPools(network);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [network]);
 
   const singlePairs = useMemo(() => {
