@@ -1,4 +1,4 @@
-import SelectPool from "../../../atomics/organism/select-pool";
+import SelectPool, { SortBy } from "../../../atomics/organism/select-pool";
 import { useState } from "react";
 
 export interface PoolPickerProps {
@@ -17,6 +17,7 @@ export default function PoolPicker({
   onNetworkChange,
 }: PoolPickerProps) {
   const [pool, setPool] = useState<string>(selectedPool);
+  const [sortBy, setSortBy] = useState<SortBy>(SortBy.Alphabet);
 
   const setAndFetch = (pool: string) => {
     setPool(pool);
@@ -26,7 +27,29 @@ export default function PoolPicker({
 
   return (
     <div>
+      <div>
+        <span>{"Sort by"}</span>
+        <input
+          type="radio"
+          onChange={() => setSortBy(SortBy.Alphabet)}
+          checked={sortBy === SortBy.Alphabet}
+          id={SortBy.Alphabet}
+          disabled={sortBy === SortBy.Alphabet}
+          value={SortBy.Alphabet}
+        />
+        <label htmlFor={SortBy.Alphabet}>{SortBy.Alphabet}</label>
+        <input
+          type="radio"
+          onChange={() => setSortBy(SortBy.Volume)}
+          checked={sortBy === SortBy.Volume}
+          disabled={sortBy === SortBy.Volume}
+          id={SortBy.Volume}
+          value={SortBy.Volume}
+        />
+        <label htmlFor={SortBy.Volume}>{SortBy.Volume}</label>
+      </div>
       <SelectPool
+        sortBy={sortBy}
         onNetworkChange={(network) => {
           setPool("");
           onNetworkChange(network);

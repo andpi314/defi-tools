@@ -1,20 +1,19 @@
 import { useMemo, useState } from "react";
 import { SupportedNetworks } from "../../scripts/uniswap";
 import { transformEvent } from "../../scripts/uniswap/utils";
-import { parseIntervalAsString } from "../../utils/date";
+
 import Chart from "../UniswapHedge/components/Chart";
 import PoolPicker from "../UniswapHedge/components/PoolPicker";
 import { useUniswapPoolData } from "../UniswapHedge/hooks/useUniswapPoolData";
 import ChartPriceAndPnl from "./components/ChartPriceAndPnl";
+import DateRangePicker, { end, start } from "./components/DateRangePicker";
+import FeeAnalysis from "./components/FeeAnalysis";
 import Input from "./components/Input";
 import {
   computeMetrics,
   computePoolMetrics,
   MetricsSettings,
 } from "./processing";
-
-const start = "2023-01-16T00:00:00.000Z";
-const end = "2023-01-18T00:00:00.000Z";
 
 /**
  * APY
@@ -37,42 +36,27 @@ export default function UniswapFee() {
   const [network, setNetwork] = useState<SupportedNetworks>(
     SupportedNetworks.ethereum
   );
-  const [samplingInterval, setSamplingInterval] = useState<number>(30);
-  const [dateRangeEdit, setDateRangeEdit] = useState<{
+
+  const [fetchRange, setFetchRange] = useState<{
     start: string;
     end: string;
+    samplingIntervals: number;
   }>({
     end: new Date(end).toISOString(),
     start: new Date(new Date(start).getTime()).toISOString(),
+    samplingIntervals: 20,
   });
-
-  const [dateRange, setDateRange] = useState<{
-    start: string;
-    end: string;
-  }>({
-    end: new Date(end).toISOString(),
-    start: new Date(new Date(start).getTime()).toISOString(),
-  });
-
-  const updateDateRange = () => {
-    setDateRange(dateRangeEdit);
-  };
 
   const { error, swaps, getSwaps, loading } = useUniswapPoolData();
 
-  const samplingIntervals = Math.ceil(
-    (new Date(dateRange.end).getTime() - new Date(dateRange.start).getTime()) /
-      (samplingInterval * 60 * 1000)
-  );
-
   const handleFetch = (poolAddress: string) => {
-    console.log(`Fetching pool transactions for ${poolAddress}`);
+    // console.log(`Fetching pool transactions for ${poolAddress}`);
     getSwaps(
       poolAddress,
       {
-        startDate: dateRange.start,
-        endDate: dateRange.end,
-        samples: samplingIntervals,
+        startDate: fetchRange.start,
+        endDate: fetchRange.end,
+        samples: fetchRange.samplingIntervals,
       },
       network
     );
@@ -111,56 +95,15 @@ export default function UniswapFee() {
           }
         />
       </div>
-      <div style={{ display: "flex", margin: "12px 0px" }}>
-        <Input
-          label="Start Date"
-          value={dateRangeEdit.start}
-          style={{ width: 200, marginRight: 16 }}
-          onChange={(e) =>
-            setDateRangeEdit({ ...dateRange, start: e.target.value })
-          }
-        />
-        <Input
-          label="End Date"
-          value={dateRangeEdit.end}
-          style={{ width: 200, marginRight: 16 }}
-          onChange={(e) =>
-            setDateRangeEdit({ ...dateRange, end: e.target.value })
-          }
-        />
-        <Input
-          label="Sampling Interval (minutes)"
-          type={"number"}
-          step={1}
-          value={samplingInterval}
-          style={{ width: 80, marginRight: 16 }}
-          onChange={(e) => setSamplingInterval(parseInt(e.target.value))}
-        />
-        <div style={{ width: 250, textAlign: "center", margin: "0px 16px" }}>
-          <div>
-            {`Range width: ${parseIntervalAsString(
-              dateRange.start,
-              dateRange.end
-            )}`}
-          </div>
-
-          <div>{`Sampling intervals: ${samplingIntervals}`}</div>
-        </div>
-        <button
-          style={{
-            marginLeft: 8,
-            minHeight: 30,
-            background: "transparent",
-            outline: "none",
-            border: "1px solid #000",
-            borderRadius: 2,
-            cursor: "pointer",
-          }}
-          onClick={updateDateRange}
-        >
-          {"Update Date Range"}
-        </button>
-      </div>
+      <DateRangePicker
+        onUpdate={(start, end, sampling) => {
+          setFetchRange({
+            start,
+            end,
+            samplingIntervals: sampling,
+          });
+        }}
+      />
       <PoolPicker
         onNetworkChange={(pool) => setNetwork(pool as any)}
         onPoolChange={setPool}
@@ -329,6 +272,14 @@ export default function UniswapFee() {
         </div>
         <div>
           <ChartPriceAndPnl
+            subData={poolMetrics}
+            loading={loading}
+            error={error}
+            data={processedData}
+          />
+        </div>
+        <div>
+          <FeeAnalysis
             subData={poolMetrics}
             loading={loading}
             error={error}

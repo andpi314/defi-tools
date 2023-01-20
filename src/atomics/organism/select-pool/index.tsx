@@ -5,14 +5,21 @@ import Select from "../../atom/select";
 
 export interface PoolSelectProps {
   pool: string;
+  sortBy?: SortBy;
   onPoolChange: (pool: string) => void;
   onNetworkChange: (pool: string) => void;
+}
+
+export enum SortBy {
+  Volume = "Volume",
+  Alphabet = "A-Z",
 }
 
 export default function SelectPool({
   pool,
   onPoolChange,
   onNetworkChange,
+  sortBy,
 }: PoolSelectProps) {
   const { getPools, pools, loading } = useUniswapPools();
   const [network, setNetwork] = useState<SupportedNetworks>(
@@ -37,8 +44,14 @@ export default function SelectPool({
       Array.from(pairs)
         //.sort((a, b) => a.localeCompare(b))
         .map((pair) => ({ value: pair, label: pair }))
+        .sort((a, b) => {
+          if (sortBy === SortBy.Alphabet) {
+            return a.label.localeCompare(b.label);
+          }
+          return 0;
+        })
     );
-  }, [pools]);
+  }, [pools, sortBy]);
 
   const poolsByPair = useMemo(() => {
     const eligiblePools = pools?.filter((pool) => {
@@ -76,7 +89,7 @@ export default function SelectPool({
           border: "1px solid #000",
           borderRadius: 2,
         }}
-        options={singlePairs.sort((a, b) => a.label.localeCompare(b.label))}
+        options={singlePairs}
         value={pair}
         helpText={loading ? "Loading..." : "Select a pair"}
         onClick={(value) => {

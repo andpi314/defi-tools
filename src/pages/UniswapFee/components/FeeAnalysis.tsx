@@ -10,7 +10,8 @@ import Chart from "chart.js/auto";
 import Loader from "../../../atomics/atom/loader";
 import annotationPlugin from "chartjs-plugin-annotation";
 import zoomPlugin from "chartjs-plugin-zoom";
-import React from "react";
+import React, { useMemo } from "react";
+import { TransformedPoolEvent } from "../../../scripts/uniswap/types";
 
 Chart.register(
   LinearScale,
@@ -31,8 +32,74 @@ export interface ChartProps {
   subData?: any;
 }
 
-export default function ChartPriceAndPnl(p: ChartProps) {
+export interface ComputedFeeRatioCounter {
+  l: number;
+}
+
+export function computeFeeRatio(events: TransformedPoolEvent[]): {
+  feeRatio: number;
+  timestamp: number;
+} {
+  // We expect the events to be sorted by timestamp
+
+  const { 0: first, length, [length - 1]: last } = events;
+
+  const { l } = events.reduce(
+    (acc: ComputedFeeRatioCounter, curr, index) => {
+      // Skip first and last element
+      if (index === 0 || index === length - 1) return acc;
+
+      const prev = events[index - 1];
+
+      const priceVariation = Math.abs(curr.price - prev.price);
+
+      acc.l = acc.l + priceVariation;
+
+      return acc;
+    },
+    {
+      l: 0,
+    }
+  );
+
+  const feeRatio = l / Math.abs(last.price - first.price);
+
+  return {
+    feeRatio,
+    timestamp: last.timestamp,
+  };
+}
+
+// A function that groups an array in a bundles of a given size
+export function groupArray<T>(array: T[], size: number) {
+  const groups = [];
+  for (let i = 0; i < array.length; i += size) {
+    groups.push(array.slice(i, i + size));
+  }
+  return groups;
+}
+
+export default function FeeAnalysis(p: ChartProps) {
   const chartRef = React.useRef(null);
+
+  console.log("Data", p.data?.data);
+
+  // data frame
+  const df = p.data?.data || [];
+
+  const processedData = useMemo(() => {
+    const bundleGroupedData = groupArray<TransformedPoolEvent>(df || [], 200);
+
+    return bundleGroupedData.map((bundle) => {
+      const { feeRatio, timestamp } = computeFeeRatio(bundle);
+      return {
+        feeRatio,
+        timestamp,
+      };
+    });
+  }, [df]);
+
+  console.log("Processed data", processedData);
 
   if (p.loading)
     return (
@@ -52,23 +119,22 @@ export default function ChartPriceAndPnl(p: ChartProps) {
   if (p.error) return <div>Error: {p.error}</div>;
 
   const data = {
-    labels: p?.subData?.pnl_and_price
+    labels: processedData
       //.filter((el) => !!el)
-      .map((el: any) => el?.price || null),
+      .map((el: any) => el?.timestamp || null),
     // datasets is an array of objects where each object represents a set of data to display corresponding to the labels above. for brevity, we'll keep it at one object
     datasets: [
       {
         id: 1,
-        label: "Price and Pnl",
-        stepped: true,
+        label: "Fee Ratio",
         // fill: false,
         // yAxisID: "y",
         // pointStyle: "false",
-        data: p.subData?.pnl_and_price
+        data: processedData
           //.filter((el) => !!el)
           .map((el: any) => ({
-            x: el?.price,
-            y: el?.pnl * 1000,
+            x: el?.timestamp,
+            y: el?.feeRatio,
           })),
         showLine: true,
       },
@@ -83,6 +149,7 @@ export default function ChartPriceAndPnl(p: ChartProps) {
 
   return (
     <div style={{ margin: 32, paddingBottom: 96 }} className="chart-container">
+      <b>{"Fee Analysis chart"}</b>
       <p>
         {
           "Zoom enabled: Hold Shift and use your mouse to zoom in (+) or out (-)"
@@ -97,6 +164,21 @@ export default function ChartPriceAndPnl(p: ChartProps) {
         options={{
           maintainAspectRatio: true,
           plugins: {
+            annotation: {
+              annotations: [
+                {
+                  // Reference line of 1
+                  type: "line",
+                  scaleID: "y",
+                  value: 1,
+                  borderColor: "rgb(75, 192, 192)",
+                  borderWidth: 1,
+                  label: {
+                    content: "Test label",
+                  },
+                },
+              ],
+            },
             zoom: {
               zoom: {
                 wheel: {
@@ -118,6 +200,7 @@ export default function ChartPriceAndPnl(p: ChartProps) {
             y: {
               beginAtZero: true,
               position: "left",
+              max: 100,
             },
           },
           // spanGaps: true,
