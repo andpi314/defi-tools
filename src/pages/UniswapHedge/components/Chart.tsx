@@ -11,7 +11,7 @@ import Loader from "../../../atomics/atom/loader";
 import annotationPlugin from "chartjs-plugin-annotation";
 import zoomPlugin from "chartjs-plugin-zoom";
 import React from "react";
-import { PositionSettings } from "../../UniswapFee/processing";
+// import { PositionSettings } from "../../UniswapFee/processing";
 
 // get random between range function with step
 function getRandomArbitrary(min: number, max: number, step: number) {
