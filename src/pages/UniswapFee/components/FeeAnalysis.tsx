@@ -51,7 +51,9 @@ export function computeFeeRatio(events: TransformedPoolEvent[]): {
 
       const prev = events[index - 1];
 
-      const priceVariation = Math.abs(curr.price - prev.price);
+      const priceVariation = Math.abs(
+        Math.sqrt(curr.price) - Math.sqrt(prev.price)
+      );
 
       acc.l = acc.l + priceVariation;
 
@@ -62,7 +64,14 @@ export function computeFeeRatio(events: TransformedPoolEvent[]): {
     }
   );
 
-  const feeRatio = l / Math.abs(last.price - first.price);
+  const feeTier = parseInt(last.raw.pool.feeTier) / 10_000;
+
+  const feeRatio =
+    (l - Math.abs(Math.sqrt(first.price) - Math.sqrt(last.price))) *
+    feeTier *
+    1000;
+
+  console.log("Fee Ratio", feeRatio);
 
   return {
     feeRatio,
@@ -90,16 +99,28 @@ export default function FeeAnalysis(p: ChartProps) {
   const processedData = useMemo(() => {
     const bundleGroupedData = groupArray<TransformedPoolEvent>(df || [], 200);
 
-    return bundleGroupedData.map((bundle) => {
+    const computedData = bundleGroupedData.map((bundle) => {
       const { feeRatio, timestamp } = computeFeeRatio(bundle);
       return {
         feeRatio,
         timestamp,
       };
     });
+
+    // Normalize data to better fit the chart
+
+    // const maxFeeRatio = Math.max(...computedData.map((el) => el.feeRatio));
+    // const minFeeRatio = Math.min(...computedData.map((el) => el.feeRatio));
+
+    // const normalizedData = computedData.map((el) => ({
+    //   ...el,
+    //   feeRatio: (el.feeRatio - minFeeRatio) / (maxFeeRatio - minFeeRatio),
+    // }));
+
+    return computedData;
   }, [df]);
 
-  console.log("Processed data", processedData);
+  // console.log("Processed data", processedData);
 
   if (p.loading)
     return (

@@ -46,16 +46,21 @@ export const useUniswapPoolData = () => {
           let skip = 0;
           let hasNextPage = true;
           const entitiesPerPage = 1000;
+          let swapsInRange: any;
           do {
-            const swapsInRange = await uniswap.getSwaps(payload);
+            try {
+              swapsInRange = await uniswap.getSwaps(payload);
 
-            if (swapsInRange.length < entitiesPerPage) {
-              hasNextPage = false;
+              if (swapsInRange.length < entitiesPerPage) {
+                hasNextPage = false;
+              }
+              skip += entitiesPerPage;
+              data.push(...swapsInRange);
+              // cool stuff here
+              await sleep(getRandomArbitrary(150, 2400));
+            } catch (e) {
+              console.log(e, swapsInRange);
             }
-            skip += entitiesPerPage;
-            data.push(...swapsInRange);
-            // cool stuff here
-            await sleep(getRandomArbitrary(150, 2400));
           } while (hasNextPage && skip <= 5000);
 
           if (skip >= 5000) {
