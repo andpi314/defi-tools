@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import reportWebVitals from "./reportWebVitals";
+import { AppApiProvider } from "./root/providers/AppAPIPovider";
 import Routing from "./router";
 
 const root = ReactDOM.createRoot(
@@ -8,7 +9,9 @@ const root = ReactDOM.createRoot(
 );
 root.render(
   <React.StrictMode>
-    <Routing />
+    <AppApiProvider>
+      <Routing />
+    </AppApiProvider>
   </React.StrictMode>
 );
 

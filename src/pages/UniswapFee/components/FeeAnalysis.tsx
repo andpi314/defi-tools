@@ -64,7 +64,7 @@ export function computeFeeRatio(events: TransformedPoolEvent[]): {
     }
   );
 
-  const feeTier = parseInt(last.raw.pool.feeTier) / 10_000;
+  const feeTier = parseInt(last.raw.pool.feeTier) / 10_000; /// 100;
 
   const feeRatio =
     (l - Math.abs(Math.sqrt(first.price) - Math.sqrt(last.price))) *
@@ -221,7 +221,7 @@ export default function FeeAnalysis(p: ChartProps) {
             y: {
               beginAtZero: true,
               position: "left",
-              max: 100,
+              max: Math.min(...processedData.map((el) => el.feeRatio)) * 10,
             },
           },
           // spanGaps: true,

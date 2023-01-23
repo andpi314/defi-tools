@@ -3,6 +3,7 @@ import NavBar from "../components/NavBar";
 import TradingReturn from "../components/TradingReturn";
 import Home from "../pages/Home";
 import PathViewer from "../pages/PathViewer";
+import Simulator from "../pages/Simulator";
 import TransactionDecoder from "../pages/TransactionDecoder";
 
 import UniswapFee from "../pages/UniswapFee";
@@ -12,6 +13,7 @@ import "../styles.css";
 export enum Paths {
   UniswapFee = "/",
   Home = "/home",
+  Simulator = "/simulator",
   PathViewer = "/path",
   TradingReturn = "/trading-return",
   TransactionDecoder = "/transaction-decoder",
@@ -22,6 +24,11 @@ export const routes = [
     path: Paths.UniswapFee,
     label: "Uniswap Fee",
     component: <UniswapFee />,
+  },
+  {
+    path: Paths.Simulator,
+    label: "Simulator",
+    component: <Simulator />,
   },
   // {
   //   path: Paths.Home,

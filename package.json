@@ -32,6 +32,7 @@
     "recharts": "^2.1.10",
     "styled-components": "^5.3.6",
     "typescript": "^4.7.2",
+    "uuid": "^9.0.0",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
@@ -42,7 +43,8 @@
     "dev": "yarn start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "api:codegen": "openapi -i http://localhost:4000/api-json -o src/api/backend -c axios --postfix Client"
   },
   "eslintConfig": {
     "extends": [
@@ -64,7 +66,11 @@
   },
   "devDependencies": {
     "@types/styled-components": "^5.1.26",
+    "@types/uuid": "^9.0.0",
     "nodemon": "^2.0.16",
+    "openapi": "^1.0.1",
+    "openapi-typescript": "^5.4.0",
+    "openapi-typescript-codegen": "^0.23.0",
     "parcel": "^2.6.2",
     "ts-node": "^10.8.1"
   },
