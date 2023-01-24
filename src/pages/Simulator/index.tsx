@@ -55,10 +55,8 @@ export default function Simulator() {
     });
   };
 
-  const loading = false;
+  const loading = simulationNew.state.loading;
   // console.log(simulationNew.state.data?.plClusters);
-
-  console.log(simulationNew.state.data?.prices);
 
   return (
     <div style={{ fontFamily: "sans-serif" }}>
@@ -122,7 +120,7 @@ export default function Simulator() {
                     simulationNew.state.data.apy > 0 ? "#00a152" : "#f44336",
                   fontFamily: "sans-serif",
                 }}
-              >{`APY al (90%): ${
+              >{`90% probability of having APY more than: ${
                 simulationNew.state.data.apy.toFixed(2) || 0
               }%`}</div>
 
@@ -134,7 +132,7 @@ export default function Simulator() {
                 }}
               >{`Probability of target APY of ${(
                 simulationNew.state.data.targetAPY * 100
-              ).toFixed(2)}%: ${
+              ).toFixed(2)}% or more: ${
                 simulationNew.state.data.probabilityTargetAPY.toFixed(2) || 0
               }%`}</div>
             </div>
