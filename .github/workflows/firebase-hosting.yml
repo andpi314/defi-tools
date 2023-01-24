@@ -33,6 +33,7 @@ jobs:
           CI: ""
           REACT_APP_UNISWAP_V3_GRAPH_BASE_API: ${{ secrets.UNISWAP_V3_GRAPH_BASE_API}}
           REACT_APP_ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY}}
+          REACT_APP_DEFI_API: ${{secrets.REACT_APP_DEFI_API}}
       - name: Archive Build
         uses: actions/upload-artifact@v2
         with:

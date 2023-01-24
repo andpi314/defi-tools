@@ -7,6 +7,8 @@ export interface PoolPickerProps {
   onNetworkChange: (pool: string) => void;
   selectedPool: string;
   fetchDisabled: boolean;
+  buttonLabel?: string;
+  disableFetchOnChange?: boolean;
 }
 
 export default function PoolPicker({
@@ -15,6 +17,8 @@ export default function PoolPicker({
   fetchDisabled,
   onPoolChange,
   onNetworkChange,
+  buttonLabel,
+  disableFetchOnChange,
 }: PoolPickerProps) {
   const [pool, setPool] = useState<string>(selectedPool);
   const [sortBy, setSortBy] = useState<SortBy>(SortBy.Alphabet);
@@ -22,6 +26,7 @@ export default function PoolPicker({
   const setAndFetch = (pool: string) => {
     setPool(pool);
     onPoolChange(pool);
+    if (disableFetchOnChange) return;
     onFetch(pool);
   };
 
@@ -89,7 +94,7 @@ export default function PoolPicker({
             onFetch(pool);
           }}
         >
-          {"Fetch Data"}
+          {buttonLabel || "Fetch Data"}
         </button>
       </div>
     </div>

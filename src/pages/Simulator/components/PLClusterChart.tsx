@@ -26,6 +26,7 @@ export interface ChartProps {
   loading: boolean;
   error: any;
   data: any;
+  ev?: number;
 }
 
 export default function PLClusterChart(p: ChartProps) {
@@ -89,6 +90,21 @@ export default function PLClusterChart(p: ChartProps) {
         options={{
           maintainAspectRatio: true,
           plugins: {
+            annotation: {
+              annotations: [
+                {
+                  // Reference line of 1
+                  type: "line",
+                  scaleID: "x",
+                  value: p?.ev || 0,
+                  borderColor: "rgb(75, 192, 192)",
+                  borderWidth: 1,
+                  label: {
+                    content: "Test label",
+                  },
+                },
+              ],
+            },
             zoom: {
               zoom: {
                 wheel: {
