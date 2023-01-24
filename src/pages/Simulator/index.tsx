@@ -9,6 +9,7 @@ import DateRangePicker, {
 } from "../UniswapFee/components/DateRangePicker";
 import PoolPicker from "../UniswapHedge/components/PoolPicker";
 import PLClusterChart from "./components/PLClusterChart";
+import PricesChart from "./components/PricesChart";
 
 export default function Simulator() {
   const [pool, setPool] = useState<string>("");
@@ -56,6 +57,8 @@ export default function Simulator() {
 
   const loading = false;
   // console.log(simulationNew.state.data?.plClusters);
+
+  console.log(simulationNew.state.data?.prices);
 
   return (
     <div style={{ fontFamily: "sans-serif" }}>
@@ -106,8 +109,8 @@ export default function Simulator() {
                 <span>{`Range between`}</span>
                 <b>
                   {` ${simulationNew.state.data.pa.toFixed(
-                    2
-                  )} - ${simulationNew.state.data.pb.toFixed(2)}`}{" "}
+                    4
+                  )} - ${simulationNew.state.data.pb.toFixed(4)}`}{" "}
                 </b>
               </div>
               <div
@@ -147,6 +150,12 @@ export default function Simulator() {
               (a: any, b: any) => a.from - b.from
             ) || []
           }
+        />
+
+        <PricesChart
+          error={simulationNew.state.error}
+          loading={simulationNew.state.loading}
+          data={simulationNew.state.data?.prices || []}
         />
       </div>
     </div>
