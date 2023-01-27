@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { parseIntervalAsString } from "../../../utils/date";
 import Input from "./Input";
 
-export const start = "2023-01-16T00:00:00.000Z";
-export const end = "2023-01-18T00:00:00.000Z";
+export const start = "2022-01-01T00:00:00.000Z";
+export const end = "2023-01-01T00:00:00.000Z";
 
 export interface DateRangeProps {
   onUpdate: (start: string, end: string, samplingInterval: number) => void;

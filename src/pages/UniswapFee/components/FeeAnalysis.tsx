@@ -71,8 +71,6 @@ export function computeFeeRatio(events: TransformedPoolEvent[]): {
     feeTier *
     1000;
 
-  console.log("Fee Ratio", feeRatio);
-
   return {
     feeRatio,
     timestamp: last.timestamp,
@@ -91,7 +89,7 @@ export function groupArray<T>(array: T[], size: number) {
 export default function FeeAnalysis(p: ChartProps) {
   const chartRef = React.useRef(null);
 
-  console.log("Data", p.data?.data);
+  // console.log("Data", p.data?.data);
 
   // data frame
   const df = p.data?.data || [];

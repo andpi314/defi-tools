@@ -84,3 +84,11 @@ export const shorten = (str: string, maxLength?: number) => {
   const end = str.substring(str.length - defaultMaxLength, str.length);
   return `${start}...${end}`;
 };
+
+const escapeRegExp = (string: string) => {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
+};
+
+export const replaceAll = (str: string, find: string, replace: string) => {
+  return str.replace(new RegExp(escapeRegExp(find), "g"), replace);
+};

@@ -121,10 +121,10 @@ export function parseIntervalAsString(
   dateEnd?: string | Date
 ): string {
   const obj = intervalToDuration(date, dateEnd);
-  const fullString = Object.entries(obj).reduce((acc, curr) => {
+  const fullString = Object.entries(obj).reduce((acc, curr, index) => {
     const [key, value] = curr;
     if (value === 0) return acc;
-    acc = `${acc} ${value}${key.charAt(0)}`;
+    acc = `${index !== 0 ? `${acc} ` : ""}${value}${key.charAt(0)}`;
     return acc;
   }, "");
   return fullString;

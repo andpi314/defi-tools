@@ -2,7 +2,7 @@
 /* tslint:disable */
 /* eslint-disable */
 
-export type GetSwapsInput = {
+export type DownloadDataInput = {
     /**
      * Inclusive start date
      */
@@ -24,8 +24,8 @@ export type GetSwapsInput = {
      */
     chainId: number;
     /**
-     * Length for the projected data in hours (e.g. 24h)
+     * File name to save on server (only supported extension is .json)
      */
-    projectionLength: number;
+    fileName: string;
 };
 

@@ -32,7 +32,7 @@ export default function PoolPicker({
 
   return (
     <div>
-      <div>
+      <div style={{ marginBottom: 4 }}>
         <span>{"Sort by"}</span>
         <input
           type="radio"

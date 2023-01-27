@@ -287,8 +287,6 @@ export default function UniswapFee() {
           />
         </div>
       </div>
-
-      {processedData && processedData?.data?.length > 0 && <></>}
     </>
   );
 }

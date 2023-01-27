@@ -1,8 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import NavBar from "../components/NavBar";
-import TradingReturn from "../components/TradingReturn";
-import Home from "../pages/Home";
-import PathViewer from "../pages/PathViewer";
 import Simulator from "../pages/Simulator";
 import TransactionDecoder from "../pages/TransactionDecoder";
 

@@ -2,7 +2,9 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { CreateUserInput } from '../models/CreateUserInput';
+import type { DownloadDataInput } from '../models/DownloadDataInput';
 import type { GetSwapsInput } from '../models/GetSwapsInput';
+import type { SimulationSettingsInput } from '../models/SimulationSettingsInput';
 import type { UpdateUserInput } from '../models/UpdateUserInput';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
@@ -98,6 +100,49 @@ export class DefaultClient {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/simulation/new',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    /**
+     * @param requestBody
+     * @returns any
+     * @throws ApiError
+     */
+    public static downloadData(
+        requestBody: DownloadDataInput,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/simulation/downloadData',
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    /**
+     * @returns any
+     * @throws ApiError
+     */
+    public static rollingWindow(): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/simulation/rollingWindow',
+        });
+    }
+
+    /**
+     * @param requestBody
+     * @returns any
+     * @throws ApiError
+     */
+    public static rollingWindowHedgeBot(
+        requestBody: SimulationSettingsInput,
+    ): CancelablePromise<any> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/simulation/rollingWindow/hedge-bot',
             body: requestBody,
             mediaType: 'application/json',
         });

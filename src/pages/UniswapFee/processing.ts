@@ -380,6 +380,7 @@ export function computePoolMetrics(
 
   let y_final = 0;
   let x_final = 0;
+
   const metrics: PoolMetrics = events.reduce(
     (acc: PoolMetrics, currEvent: TransformedPoolEvent, index: number) => {
       // ############### SKIP elements ###############
@@ -611,7 +612,25 @@ export function computePoolMetrics(
       (1 + fee + settings.slippage / 100);
   }
 
-  const pnl = y_final - y_initial + y_from_x;
+  // ############### COMPUTE COST: HP run a next simulation ###############
+  const lastSwap = events[events.length - 1];
+
+  const closestTickToLastPrice = getClosestTick(lastSwap.price, tickSpacing);
+
+  const upperTickNext =
+    closestTickToLastPrice + settings.hysteresis * tickSpacing;
+
+  const x_initial_next =
+    1 / Math.sqrt(lastSwap.price) -
+    1 / Math.sqrt(getPriceFromTick(upperTickNext));
+
+  // Compute cost swap X into Y
+  const costToPrepareXinY =
+    x_initial_next * (-fee - settings.slippage / 100) * lastSwap.price;
+
+  // ############### COMPUTE COST: HP run a next simulation ###############
+
+  const pnl = y_final - y_initial + y_from_x + costToPrepareXinY;
 
   const seconds =
     parseInt(lastEvent.raw.timestamp) - parseInt(firstEvent.raw.timestamp);
